@@ -1,0 +1,806 @@
+{
+    "id": "d3cade89-d184-4f47-89e4-0c0be9c10f5c",
+    "status": "success",
+    "config": "16097e25-b2b9-44ae-b69a-0f0505b7de4e",
+    "result": [
+        {
+            "task": "creative_director",
+            "status": "success",
+            "results": {
+                "product_id": "097d0cc3-598b-4b2e-add2-a1710a417d6f",
+                "product_title": "new balance",
+                "product_images": [
+                    "https://youcefbell.a.ayor.ai/youcefbell/MEDIA/image_3e58b945-af9c-4e2d-9fff-8d53c6ab4ea7.webp"
+                ],
+                "product_details": "<p>the shoe</p>\nPrice: 3500.00 | Shop: youcefbell",
+                "design_blueprint": {
+                    "panels": [
+                        {
+                            "panel_goal": "Hook - grab attention with high-impact product macro",
+                            "panel_size": "SQR",
+                            "panel_number": 1,
+                            "text_content": {
+                                "headline": "ستيل هبال و راحة ما تتوصفش!",
+                                "badge_text": "الجديد يا جدك",
+                                "price_text": null,
+                                "sub_headline": "New Balance 530. لا كلاص و الراحة في سبادري واحد",
+                                "additional_text": null,
+                                "cta_button_text": null,
+                                "text_styling_instructions": "Highlight 'هبال' with a subtle silver metallic glow effect. Use a bold, condensed font for the headline."
+                            },
+                            "composition_notes": "SQR format. Product focus center-right",
+                            "visual_prompt_english": "A macro close-up of the New Balance 530 sneaker, focusing on the metallic silver 'N' logo and the intricate white mesh texture. Sharp studio lighting with high contrast creates a premium feel. The background is a clean, neutral grey with a soft gradient. The camera angle is slightly tilted to create dynamic energy. Shallow depth of field keeps the focus strictly on the shoe's textures.",
+                            "requires_product_reference": true
+                        },
+                        {
+                            "panel_goal": "Interest - Showcase technical features and comfort",
+                            "panel_size": "WIDE",
+                            "panel_number": 2,
+                            "text_content": {
+                                "headline": "تكنولوجيا ABZORB للراحة اليومية",
+                                "badge_text": null,
+                                "price_text": null,
+                                "sub_headline": null,
+                                "additional_text": [
+                                    {
+                                        "label": "feature",
+                                        "content": "قماش يتنفس (Mesh breathable)",
+                                        "style_hint": null
+                                    },
+                                    {
+                                        "label": "feature",
+                                        "content": "تصميم كلاسيكي عصري",
+                                        "style_hint": null
+                                    },
+                                    {
+                                        "label": "feature",
+                                        "content": "خفة في المشي",
+                                        "style_hint": null
+                                    }
+                                ],
+                                "cta_button_text": null,
+                                "text_styling_instructions": "Render the feature list with small silver dot icons. Use 'ABZORB' in a technical, slightly metallic sans-serif font."
+                            },
+                            "composition_notes": "WIDE format. Product centered",
+                            "visual_prompt_english": "The full New Balance 530 sneaker floating horizontally in mid-air against a bright, architectural white studio background. Soft volumetric lighting highlights the ABZORB cushioning in the sole and the breathable mesh upper. The shoe is positioned at a 3/4 angle. Subtle dust particles in the air catch the light to add depth without being distracting.",
+                            "requires_product_reference": true
+                        },
+                        {
+                            "panel_goal": "Action - Drive purchase with price and shop info",
+                            "panel_size": "WIDE",
+                            "panel_number": 3,
+                            "text_content": {
+                                "headline": "ما تراطيش، راهي ليك درك!",
+                                "badge_text": null,
+                                "price_text": "3500.00 دج برك",
+                                "sub_headline": null,
+                                "additional_text": [
+                                    {
+                                        "label": "shop_info",
+                                        "content": "متوفر عند: youcefbell",
+                                        "style_hint": null
+                                    }
+                                ],
+                                "cta_button_text": "أطلب درك",
+                                "text_styling_instructions": "Place the price in a bold navy blue box with white text. Make the CTA button look like a sleek metallic pill-shaped button."
+                            },
+                            "composition_notes": "WIDE format. Shoes on the right",
+                            "visual_prompt_english": "A pair of New Balance 530 sneakers neatly arranged on a reflective white surface. One shoe is standing, the other is lying slightly to its side. The lighting is warm and inviting. In the background, a soft-focus urban environment is visible through a window, grounding the product in real-world use. The composition is clean with plenty of white space for text.",
+                            "requires_product_reference": true
+                        }
+                    ],
+                    "global_directive": {
+                        "vibe": "Urban Streetwear Chic",
+                        "color_palette": {
+                            "cta_hex": "#C0C0C0",
+                            "accent_hex": "#1B263B",
+                            "background_hex": "#F5F5F7",
+                            "primary_text_hex": "#0D1B2A"
+                        },
+                        "typography_guide": "Headline: 'Bebas Neue' (Bold and impactful), Body: 'Montserrat' (Clean and modern). Use large letter spacing for sub-headlines.",
+                        "show_panel_numbers": false,
+                        "continuity_directives": [
+                            {
+                                "element_type": "texture_overlay",
+                                "placement_hint": "Fading into the corners of each panel",
+                                "panel_variations": {
+                                    "1": "very faint",
+                                    "3": "slightly more visible to ground the product"
+                                },
+                                "color_instruction": "Using accent silver #C0C0C0 at 5% opacity",
+                                "visual_description": "A very subtle hexagonal mesh pattern inspired by the sneaker's fabric, appearing faintly in the background corners."
+                            },
+                            {
+                                "element_type": "geometric_motif",
+                                "placement_hint": "Bottom right corner, oriented at a 45-degree angle",
+                                "panel_variations": null,
+                                "color_instruction": "Navy Blue #0D1B2A at 10% opacity",
+                                "visual_description": "Clean, thin parallel lines suggesting motion and speed, echoing the sneaker's aerodynamic silhouette."
+                            }
+                        ],
+                        "transition_directives": [],
+                        "recurring_visual_elements": [
+                            "Subtle metallic silver accents",
+                            "Mesh texture overlays",
+                            "Dynamic shadows"
+                        ],
+                        "panel_indicator_description": ""
+                    }
+                },
+                "current_panel_index": 1,
+                "product_backend_data": {
+                    "id": "097d0cc3-598b-4b2e-add2-a1710a417d6f",
+                    "name": "new balance",
+                    "price": "3500.00",
+                    "overview": null,
+                    "variants": [],
+                    "shop_logo": null,
+                    "shop_name": "youcefbell",
+                    "description": "<p>the shoe</p>",
+                    "landing_page": null,
+                    "product_media": [
+                        {
+                            "id": 112956,
+                            "url": "https://youcefbell.a.ayor.ai/youcefbell/MEDIA/image_3e58b945-af9c-4e2d-9fff-8d53c6ab4ea7.webp",
+                            "product": "097d0cc3-598b-4b2e-add2-a1710a417d6f"
+                        }
+                    ],
+                    "reduced_price": null
+                }
+            },
+            "started_at": "2026-02-07T01:27:35.472632",
+            "finished_at": "2026-02-07T01:27:51.091766"
+        },
+        {
+            "task": "panel_grouping",
+            "status": "success",
+            "results": {
+                "panel_groups": [
+                    {
+                        "panels": [
+                            {
+                                "panel_goal": "Hook - grab attention with high-impact product macro",
+                                "panel_size": "SQR",
+                                "panel_number": 1,
+                                "text_content": {
+                                    "headline": "ستيل هبال و راحة ما تتوصفش!",
+                                    "badge_text": "الجديد يا جدك",
+                                    "price_text": null,
+                                    "sub_headline": "New Balance 530. لا كلاص و الراحة في سبادري واحد",
+                                    "additional_text": null,
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Highlight 'هبال' with a subtle silver metallic glow effect. Use a bold, condensed font for the headline."
+                                },
+                                "composition_notes": "SQR format. Product focus center-right",
+                                "visual_prompt_english": "A macro close-up of the New Balance 530 sneaker, focusing on the metallic silver 'N' logo and the intricate white mesh texture. Sharp studio lighting with high contrast creates a premium feel. The background is a clean, neutral grey with a soft gradient. The camera angle is slightly tilted to create dynamic energy. Shallow depth of field keeps the focus strictly on the shoe's textures.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Interest - Showcase technical features and comfort",
+                                "panel_size": "WIDE",
+                                "panel_number": 2,
+                                "text_content": {
+                                    "headline": "تكنولوجيا ABZORB للراحة اليومية",
+                                    "badge_text": null,
+                                    "price_text": null,
+                                    "sub_headline": null,
+                                    "additional_text": [
+                                        {
+                                            "label": "feature",
+                                            "content": "قماش يتنفس (Mesh breathable)",
+                                            "style_hint": null
+                                        },
+                                        {
+                                            "label": "feature",
+                                            "content": "تصميم كلاسيكي عصري",
+                                            "style_hint": null
+                                        },
+                                        {
+                                            "label": "feature",
+                                            "content": "خفة في المشي",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Render the feature list with small silver dot icons. Use 'ABZORB' in a technical, slightly metallic sans-serif font."
+                                },
+                                "composition_notes": "WIDE format. Product centered",
+                                "visual_prompt_english": "The full New Balance 530 sneaker floating horizontally in mid-air against a bright, architectural white studio background. Soft volumetric lighting highlights the ABZORB cushioning in the sole and the breathable mesh upper. The shoe is positioned at a 3/4 angle. Subtle dust particles in the air catch the light to add depth without being distracting.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Action - Drive purchase with price and shop info",
+                                "panel_size": "WIDE",
+                                "panel_number": 3,
+                                "text_content": {
+                                    "headline": "ما تراطيش، راهي ليك درك!",
+                                    "badge_text": null,
+                                    "price_text": "3500.00 دج برك",
+                                    "sub_headline": null,
+                                    "additional_text": [
+                                        {
+                                            "label": "shop_info",
+                                            "content": "متوفر عند: youcefbell",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": "أطلب درك",
+                                    "text_styling_instructions": "Place the price in a bold navy blue box with white text. Make the CTA button look like a sleek metallic pill-shaped button."
+                                },
+                                "composition_notes": "WIDE format. Shoes on the right",
+                                "visual_prompt_english": "A pair of New Balance 530 sneakers neatly arranged on a reflective white surface. One shoe is standing, the other is lying slightly to its side. The lighting is warm and inviting. In the background, a soft-focus urban environment is visible through a window, grounding the product in real-world use. The composition is clean with plenty of white space for text.",
+                                "requires_product_reference": true
+                            }
+                        ],
+                        "group_number": 1,
+                        "panel_numbers": [
+                            1,
+                            2,
+                            3
+                        ]
+                    }
+                ],
+                "generated_groups": {},
+                "current_group_index": 1
+            },
+            "started_at": "2026-02-07T01:27:51.229994",
+            "finished_at": "2026-02-07T01:27:51.457706"
+        },
+        {
+            "task": "imagen_group_1",
+            "status": "success",
+            "results": {
+                "generated_groups": {
+                    "1": {
+                        "image_url": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/64072515-5c81-460b-a207-9f3602e5a161.png",
+                        "image_mime": "image/png",
+                        "group_number": 1,
+                        "panel_numbers": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "image_storage_path": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/64072515-5c81-460b-a207-9f3602e5a161.png",
+                        "structure_sequence": [
+                            "SQR",
+                            "WIDE",
+                            "WIDE"
+                        ]
+                    }
+                },
+                "current_group_index": 2
+            },
+            "started_at": "2026-02-07T01:27:51.594571",
+            "finished_at": "2026-02-07T01:28:29.598536"
+        },
+        {
+            "task": "assembler",
+            "status": "success",
+            "results": {
+                "final_output": {
+                    "panel_count": 3,
+                    "panel_groups": [
+                        {
+                            "panels": [
+                                {
+                                    "panel_goal": "Hook - grab attention with high-impact product macro",
+                                    "panel_size": "SQR",
+                                    "panel_number": 1,
+                                    "text_content": {
+                                        "headline": "ستيل هبال و راحة ما تتوصفش!",
+                                        "badge_text": "الجديد يا جدك",
+                                        "price_text": null,
+                                        "sub_headline": "New Balance 530. لا كلاص و الراحة في سبادري واحد",
+                                        "additional_text": null,
+                                        "cta_button_text": null,
+                                        "text_styling_instructions": "Highlight 'هبال' with a subtle silver metallic glow effect. Use a bold, condensed font for the headline."
+                                    },
+                                    "composition_notes": "SQR format. Product focus center-right",
+                                    "visual_prompt_english": "A macro close-up of the New Balance 530 sneaker, focusing on the metallic silver 'N' logo and the intricate white mesh texture. Sharp studio lighting with high contrast creates a premium feel. The background is a clean, neutral grey with a soft gradient. The camera angle is slightly tilted to create dynamic energy. Shallow depth of field keeps the focus strictly on the shoe's textures.",
+                                    "requires_product_reference": true
+                                },
+                                {
+                                    "panel_goal": "Interest - Showcase technical features and comfort",
+                                    "panel_size": "WIDE",
+                                    "panel_number": 2,
+                                    "text_content": {
+                                        "headline": "تكنولوجيا ABZORB للراحة اليومية",
+                                        "badge_text": null,
+                                        "price_text": null,
+                                        "sub_headline": null,
+                                        "additional_text": [
+                                            {
+                                                "label": "feature",
+                                                "content": "قماش يتنفس (Mesh breathable)",
+                                                "style_hint": null
+                                            },
+                                            {
+                                                "label": "feature",
+                                                "content": "تصميم كلاسيكي عصري",
+                                                "style_hint": null
+                                            },
+                                            {
+                                                "label": "feature",
+                                                "content": "خفة في المشي",
+                                                "style_hint": null
+                                            }
+                                        ],
+                                        "cta_button_text": null,
+                                        "text_styling_instructions": "Render the feature list with small silver dot icons. Use 'ABZORB' in a technical, slightly metallic sans-serif font."
+                                    },
+                                    "composition_notes": "WIDE format. Product centered",
+                                    "visual_prompt_english": "The full New Balance 530 sneaker floating horizontally in mid-air against a bright, architectural white studio background. Soft volumetric lighting highlights the ABZORB cushioning in the sole and the breathable mesh upper. The shoe is positioned at a 3/4 angle. Subtle dust particles in the air catch the light to add depth without being distracting.",
+                                    "requires_product_reference": true
+                                },
+                                {
+                                    "panel_goal": "Action - Drive purchase with price and shop info",
+                                    "panel_size": "WIDE",
+                                    "panel_number": 3,
+                                    "text_content": {
+                                        "headline": "ما تراطيش، راهي ليك درك!",
+                                        "badge_text": null,
+                                        "price_text": "3500.00 دج برك",
+                                        "sub_headline": null,
+                                        "additional_text": [
+                                            {
+                                                "label": "shop_info",
+                                                "content": "متوفر عند: youcefbell",
+                                                "style_hint": null
+                                            }
+                                        ],
+                                        "cta_button_text": "أطلب درك",
+                                        "text_styling_instructions": "Place the price in a bold navy blue box with white text. Make the CTA button look like a sleek metallic pill-shaped button."
+                                    },
+                                    "composition_notes": "WIDE format. Shoes on the right",
+                                    "visual_prompt_english": "A pair of New Balance 530 sneakers neatly arranged on a reflective white surface. One shoe is standing, the other is lying slightly to its side. The lighting is warm and inviting. In the background, a soft-focus urban environment is visible through a window, grounding the product in real-world use. The composition is clean with plenty of white space for text.",
+                                    "requires_product_reference": true
+                                }
+                            ],
+                            "group_number": 1,
+                            "panel_numbers": [
+                                1,
+                                2,
+                                3
+                            ]
+                        }
+                    ],
+                    "design_length": "short",
+                    "generation_mode": "combined",
+                    "design_blueprint": {
+                        "panels": [
+                            {
+                                "panel_goal": "Hook - grab attention with high-impact product macro",
+                                "panel_size": "SQR",
+                                "panel_number": 1,
+                                "text_content": {
+                                    "headline": "ستيل هبال و راحة ما تتوصفش!",
+                                    "badge_text": "الجديد يا جدك",
+                                    "price_text": null,
+                                    "sub_headline": "New Balance 530. لا كلاص و الراحة في سبادري واحد",
+                                    "additional_text": null,
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Highlight 'هبال' with a subtle silver metallic glow effect. Use a bold, condensed font for the headline."
+                                },
+                                "composition_notes": "SQR format. Product focus center-right",
+                                "visual_prompt_english": "A macro close-up of the New Balance 530 sneaker, focusing on the metallic silver 'N' logo and the intricate white mesh texture. Sharp studio lighting with high contrast creates a premium feel. The background is a clean, neutral grey with a soft gradient. The camera angle is slightly tilted to create dynamic energy. Shallow depth of field keeps the focus strictly on the shoe's textures.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Interest - Showcase technical features and comfort",
+                                "panel_size": "WIDE",
+                                "panel_number": 2,
+                                "text_content": {
+                                    "headline": "تكنولوجيا ABZORB للراحة اليومية",
+                                    "badge_text": null,
+                                    "price_text": null,
+                                    "sub_headline": null,
+                                    "additional_text": [
+                                        {
+                                            "label": "feature",
+                                            "content": "قماش يتنفس (Mesh breathable)",
+                                            "style_hint": null
+                                        },
+                                        {
+                                            "label": "feature",
+                                            "content": "تصميم كلاسيكي عصري",
+                                            "style_hint": null
+                                        },
+                                        {
+                                            "label": "feature",
+                                            "content": "خفة في المشي",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Render the feature list with small silver dot icons. Use 'ABZORB' in a technical, slightly metallic sans-serif font."
+                                },
+                                "composition_notes": "WIDE format. Product centered",
+                                "visual_prompt_english": "The full New Balance 530 sneaker floating horizontally in mid-air against a bright, architectural white studio background. Soft volumetric lighting highlights the ABZORB cushioning in the sole and the breathable mesh upper. The shoe is positioned at a 3/4 angle. Subtle dust particles in the air catch the light to add depth without being distracting.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Action - Drive purchase with price and shop info",
+                                "panel_size": "WIDE",
+                                "panel_number": 3,
+                                "text_content": {
+                                    "headline": "ما تراطيش، راهي ليك درك!",
+                                    "badge_text": null,
+                                    "price_text": "3500.00 دج برك",
+                                    "sub_headline": null,
+                                    "additional_text": [
+                                        {
+                                            "label": "shop_info",
+                                            "content": "متوفر عند: youcefbell",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": "أطلب درك",
+                                    "text_styling_instructions": "Place the price in a bold navy blue box with white text. Make the CTA button look like a sleek metallic pill-shaped button."
+                                },
+                                "composition_notes": "WIDE format. Shoes on the right",
+                                "visual_prompt_english": "A pair of New Balance 530 sneakers neatly arranged on a reflective white surface. One shoe is standing, the other is lying slightly to its side. The lighting is warm and inviting. In the background, a soft-focus urban environment is visible through a window, grounding the product in real-world use. The composition is clean with plenty of white space for text.",
+                                "requires_product_reference": true
+                            }
+                        ],
+                        "global_directive": {
+                            "vibe": "Urban Streetwear Chic",
+                            "color_palette": {
+                                "cta_hex": "#C0C0C0",
+                                "accent_hex": "#1B263B",
+                                "background_hex": "#F5F5F7",
+                                "primary_text_hex": "#0D1B2A"
+                            },
+                            "typography_guide": "Headline: 'Bebas Neue' (Bold and impactful), Body: 'Montserrat' (Clean and modern). Use large letter spacing for sub-headlines.",
+                            "show_panel_numbers": false,
+                            "continuity_directives": [
+                                {
+                                    "element_type": "texture_overlay",
+                                    "placement_hint": "Fading into the corners of each panel",
+                                    "panel_variations": {
+                                        "1": "very faint",
+                                        "3": "slightly more visible to ground the product"
+                                    },
+                                    "color_instruction": "Using accent silver #C0C0C0 at 5% opacity",
+                                    "visual_description": "A very subtle hexagonal mesh pattern inspired by the sneaker's fabric, appearing faintly in the background corners."
+                                },
+                                {
+                                    "element_type": "geometric_motif",
+                                    "placement_hint": "Bottom right corner, oriented at a 45-degree angle",
+                                    "panel_variations": null,
+                                    "color_instruction": "Navy Blue #0D1B2A at 10% opacity",
+                                    "visual_description": "Clean, thin parallel lines suggesting motion and speed, echoing the sneaker's aerodynamic silhouette."
+                                }
+                            ],
+                            "transition_directives": [],
+                            "recurring_visual_elements": [
+                                "Subtle metallic silver accents",
+                                "Mesh texture overlays",
+                                "Dynamic shadows"
+                            ],
+                            "panel_indicator_description": ""
+                        }
+                    },
+                    "generated_groups": [
+                        {
+                            "image_url": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/64072515-5c81-460b-a207-9f3602e5a161.png",
+                            "image_mime": "image/png",
+                            "group_number": 1,
+                            "panel_numbers": [
+                                1,
+                                2,
+                                3
+                            ],
+                            "image_storage_path": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/64072515-5c81-460b-a207-9f3602e5a161.png",
+                            "structure_sequence": [
+                                "SQR",
+                                "WIDE",
+                                "WIDE"
+                            ]
+                        }
+                    ],
+                    "stacked_image_url": "https://cdn.agents.ayor.ai/design_agent/stacked/2a11c08e-d696-43ed-92c1-d821370ec5c8.webp"
+                },
+                "stacked_image_path": "https://cdn.agents.ayor.ai/design_agent/stacked/2a11c08e-d696-43ed-92c1-d821370ec5c8.webp"
+            },
+            "started_at": "2026-02-07T01:28:29.738010",
+            "finished_at": "2026-02-07T01:28:35.308582"
+        }
+    ],
+    "created_at": "2026-02-07T02:27:35.146897+01:00",
+    "updated_at": "2026-02-07T02:28:38.342255+01:00"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+    "id": "d213a7ee-18f3-49e1-956b-26aa8268f6c8",
+    "status": "running",
+    "config": "936a8c83-639e-427e-9df3-8035898e9751",
+    "result": [
+        {
+            "task": "creative_director",
+            "status": "success",
+            "results": {
+                "product_id": "458301b4-436e-4e63-86e3-4d33de8a3b27",
+                "product_title": "test",
+                "product_images": [
+                    "https://confirmix.a.ayor.ai/confirmix/MEDIA/image_c6a29fd4-a179-41cf-8a17-1f08ff57a0e3.webp"
+                ],
+                "product_details": "<p>test</p>\nPrice: 2500.00 | Shop: confirmix",
+                "design_blueprint": {
+                    "panels": [
+                        {
+                            "panel_goal": "Hook - Attention with the full premium set",
+                            "panel_size": "SQR",
+                            "panel_number": 1,
+                            "text_content": {
+                                "headline": "غيّر جو دارك بلمسة ذهبية!",
+                                "badge_text": "تصميم فاخر",
+                                "price_text": null,
+                                "sub_headline": "أجمل الديكورات الإسلامية العصرية لبيتك",
+                                "additional_text": null,
+                                "cta_button_text": null,
+                                "text_styling_instructions": "Render the word 'ذهبية' in a shimmering gold foil effect. Headline should be centered and bold."
+                            },
+                            "composition_notes": "SQR Structure. Centered product layout with headline at the top and sub-headline below",
+                            "visual_prompt_english": "A stunning hero shot of the full gold acrylic wall decor set including the ornate clock, framed calligraphy of Allah and Muhammad, and the crescent moon with lantern motif. The set is mounted on a clean off-white wall with soft sunlight hitting the reflective gold surfaces creating a warm glow. Luxurious atmosphere.",
+                            "requires_product_reference": true
+                        },
+                        {
+                            "panel_goal": "Interest - Showcase quality and components",
+                            "panel_size": "WIDE",
+                            "panel_number": 2,
+                            "text_content": {
+                                "headline": "جودة عالية وتفاصيل دقيقة",
+                                "badge_text": null,
+                                "price_text": null,
+                                "sub_headline": "طقم كامل يجمع بين الفخامة والروحانية",
+                                "additional_text": [
+                                    {
+                                        "label": "feature",
+                                        "content": "أكريليك ذهبي عاكس",
+                                        "style_hint": null
+                                    },
+                                    {
+                                        "label": "feature",
+                                        "content": "سهل التركيب",
+                                        "style_hint": null
+                                    }
+                                ],
+                                "cta_button_text": null,
+                                "text_styling_instructions": "Use bullet points with small golden star icons for the features. Highlight 'جودة عالية' with a subtle underline."
+                            },
+                            "composition_notes": "WIDE Structure. Product focus on the left, text elements stacked on the right",
+                            "visual_prompt_english": "A close-up side angle shot focusing on the intricate details of the gold acrylic wall clock and the 'Allah' calligraphy frame. Show the 3D depth of the acrylic and its mirror-like finish. The background is a slightly blurred elegant living room corner.",
+                            "requires_product_reference": true
+                        },
+                        {
+                            "panel_goal": "Action - Price and CTA",
+                            "panel_size": "WIDE",
+                            "panel_number": 3,
+                            "text_content": {
+                                "headline": "أطلبها الآن وزيّن دارك",
+                                "badge_text": null,
+                                "price_text": "2500.00 دج",
+                                "sub_headline": null,
+                                "additional_text": [
+                                    {
+                                        "label": "offer",
+                                        "content": "متوفر عند Confirmix",
+                                        "style_hint": null
+                                    }
+                                ],
+                                "cta_button_text": "اشتري الآن",
+                                "text_styling_instructions": "Make the price text large and bold in accent gold. The CTA button should have a soft drop shadow."
+                            },
+                            "composition_notes": "WIDE Structure. Product on the right, large price and CTA button on the left",
+                            "visual_prompt_english": "The full Islamic decor set displayed in a cozy, well-lit Algerian home setting during sunset. The golden pieces reflect the warm orange sky. A 'Confirmix' shop logo appears subtly in a corner.",
+                            "requires_product_reference": true
+                        }
+                    ],
+                    "global_directive": {
+                        "vibe": "Luxurious Islamic Elegance",
+                        "color_palette": {
+                            "cta_hex": "#B8860B",
+                            "accent_hex": "#D4AF37",
+                            "background_hex": "#F9F6F0",
+                            "primary_text_hex": "#2C1E14"
+                        },
+                        "typography_guide": "Primary: Cairo (Bold) for headlines, Secondary: Amiri (Regular) for body text. Use elegant gold-leaf textures for key headings.",
+                        "show_panel_numbers": false,
+                        "continuity_directives": [
+                            {
+                                "element_type": "texture_overlay",
+                                "placement_hint": "Entire background",
+                                "panel_variations": null,
+                                "color_instruction": "Using background hex #F9F6F0 at 5% opacity",
+                                "visual_description": "Fine silk fabric texture barely visible in the negative space"
+                            },
+                            {
+                                "element_type": "geometric_motif",
+                                "placement_hint": "Top right and bottom left corners",
+                                "panel_variations": null,
+                                "color_instruction": "Accent gold #D4AF37 at 15% opacity",
+                                "visual_description": "Subtle arabesque corner motifs with a soft glow"
+                            }
+                        ],
+                        "transition_directives": [],
+                        "recurring_visual_elements": [
+                            "Subtle Islamic geometric patterns in the background",
+                            "Soft warm golden lighting reflections",
+                            "Floating dust motes in depth of field"
+                        ],
+                        "panel_indicator_description": ""
+                    }
+                },
+                "current_panel_index": 1,
+                "product_backend_data": {
+                    "id": "458301b4-436e-4e63-86e3-4d33de8a3b27",
+                    "name": "test",
+                    "price": "2500.00",
+                    "overview": null,
+                    "variants": [],
+                    "shop_logo": null,
+                    "shop_name": "confirmix",
+                    "description": "<p>test</p>",
+                    "landing_page": null,
+                    "product_media": [
+                        {
+                            "id": 114511,
+                            "url": "https://confirmix.a.ayor.ai/confirmix/MEDIA/image_c6a29fd4-a179-41cf-8a17-1f08ff57a0e3.webp",
+                            "product": "458301b4-436e-4e63-86e3-4d33de8a3b27"
+                        }
+                    ],
+                    "reduced_price": null
+                }
+            },
+            "started_at": "2026-02-09T06:57:58.981381",
+            "finished_at": "2026-02-09T06:58:13.335676"
+        },
+        {
+            "task": "panel_grouping",
+            "status": "success",
+            "results": {
+                "panel_groups": [
+                    {
+                        "panels": [
+                            {
+                                "panel_goal": "Hook - Attention with the full premium set",
+                                "panel_size": "SQR",
+                                "panel_number": 1,
+                                "text_content": {
+                                    "headline": "غيّر جو دارك بلمسة ذهبية!",
+                                    "badge_text": "تصميم فاخر",
+                                    "price_text": null,
+                                    "sub_headline": "أجمل الديكورات الإسلامية العصرية لبيتك",
+                                    "additional_text": null,
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Render the word 'ذهبية' in a shimmering gold foil effect. Headline should be centered and bold."
+                                },
+                                "composition_notes": "SQR Structure. Centered product layout with headline at the top and sub-headline below",
+                                "visual_prompt_english": "A stunning hero shot of the full gold acrylic wall decor set including the ornate clock, framed calligraphy of Allah and Muhammad, and the crescent moon with lantern motif. The set is mounted on a clean off-white wall with soft sunlight hitting the reflective gold surfaces creating a warm glow. Luxurious atmosphere.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Interest - Showcase quality and components",
+                                "panel_size": "WIDE",
+                                "panel_number": 2,
+                                "text_content": {
+                                    "headline": "جودة عالية وتفاصيل دقيقة",
+                                    "badge_text": null,
+                                    "price_text": null,
+                                    "sub_headline": "طقم كامل يجمع بين الفخامة والروحانية",
+                                    "additional_text": [
+                                        {
+                                            "label": "feature",
+                                            "content": "أكريليك ذهبي عاكس",
+                                            "style_hint": null
+                                        },
+                                        {
+                                            "label": "feature",
+                                            "content": "سهل التركيب",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": null,
+                                    "text_styling_instructions": "Use bullet points with small golden star icons for the features. Highlight 'جودة عالية' with a subtle underline."
+                                },
+                                "composition_notes": "WIDE Structure. Product focus on the left, text elements stacked on the right",
+                                "visual_prompt_english": "A close-up side angle shot focusing on the intricate details of the gold acrylic wall clock and the 'Allah' calligraphy frame. Show the 3D depth of the acrylic and its mirror-like finish. The background is a slightly blurred elegant living room corner.",
+                                "requires_product_reference": true
+                            },
+                            {
+                                "panel_goal": "Action - Price and CTA",
+                                "panel_size": "WIDE",
+                                "panel_number": 3,
+                                "text_content": {
+                                    "headline": "أطلبها الآن وزيّن دارك",
+                                    "badge_text": null,
+                                    "price_text": "2500.00 دج",
+                                    "sub_headline": null,
+                                    "additional_text": [
+                                        {
+                                            "label": "offer",
+                                            "content": "متوفر عند Confirmix",
+                                            "style_hint": null
+                                        }
+                                    ],
+                                    "cta_button_text": "اشتري الآن",
+                                    "text_styling_instructions": "Make the price text large and bold in accent gold. The CTA button should have a soft drop shadow."
+                                },
+                                "composition_notes": "WIDE Structure. Product on the right, large price and CTA button on the left",
+                                "visual_prompt_english": "The full Islamic decor set displayed in a cozy, well-lit Algerian home setting during sunset. The golden pieces reflect the warm orange sky. A 'Confirmix' shop logo appears subtly in a corner.",
+                                "requires_product_reference": true
+                            }
+                        ],
+                        "group_number": 1,
+                        "panel_numbers": [
+                            1,
+                            2,
+                            3
+                        ]
+                    }
+                ],
+                "generated_groups": {},
+                "current_group_index": 1
+            },
+            "started_at": "2026-02-09T06:58:13.447122",
+            "finished_at": "2026-02-09T06:58:13.622700"
+        },
+        {
+            "task": "imagen_group_1",
+            "status": "success",
+            "results": {
+                "generated_groups": {
+                    "1": {
+                        "image_url": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/3f4f1108-1e6d-4500-a863-5171761e641e.png",
+                        "image_mime": "image/png",
+                        "group_number": 1,
+                        "panel_numbers": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "image_storage_path": "https://storage.googleapis.com/ayor-agentic-storage/design_agent/groups/3f4f1108-1e6d-4500-a863-5171761e641e.png",
+                        "structure_sequence": [
+                            "SQR",
+                            "WIDE",
+                            "WIDE"
+                        ]
+                    }
+                },
+                "current_group_index": 2
+            },
+            "started_at": "2026-02-09T06:58:13.735812",
+            "finished_at": "2026-02-09T06:59:04.414868"
+        },
+        {
+            "task": "assembler",
+            "status": "running",
+            "results": null,
+            "started_at": "2026-02-09T06:59:04.532624",
+            "finished_at": "2026-02-09T06:59:04.532628"
+        }
+    ],
+    "created_at": "2026-02-09T07:57:58.206349+01:00",
+    "updated_at": "2026-02-09T07:59:06.877511+01:00"
+}
