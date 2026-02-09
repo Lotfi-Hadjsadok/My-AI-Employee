@@ -1,21 +1,17 @@
 import stripJsonComments from "strip-json-comments";
-import { runWithRetry, RATE_LIMIT_DELAY_MS } from "../replicate";
+import { run } from "../openrouter";
 import {
   buildCopyPrompt,
   buildFeaturesPrompt,
   buildFullCreativePrompt,
   buildFullImagePrompt,
   buildImage1Prompt,
-  buildImage2And3Prompt,
+  buildSingleCanvaImagePrompt,
   type CopyLanguage,
   type ArabicDialect,
   type SectionCreativeSpec,
   type FeatureItem,
 } from "./prompts";
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function parseJsonResponse<T>(text: string): T {
   let raw = text.trim();
@@ -75,8 +71,6 @@ export interface LandingPipelineState {
   fullCreative?: FullCreativeOutput;
   /** Section 1 image (SQR - 1:1) */
   imageUrl?: string;
-  /** Sections 2+3 combined image (WIDE) */
-  image2Url?: string;
   copyLanguage?: CopyLanguage;
   arabicDialect?: ArabicDialect;
   /** Raw user-provided feature strings (before features agent) */
@@ -87,6 +81,8 @@ export interface LandingPipelineState {
 export type { CopyLanguage, ArabicDialect } from "./prompts";
 
 const COPY_MODEL = "google/gemini-2.5-flash" as const;
+/** Nano Banana Pro - Gemini 3 Pro Image Preview */
+const IMAGE_MODEL = "google/gemini-3-pro-image-preview" as const;
 
 async function copyAgent(state: LandingPipelineState): Promise<Partial<LandingPipelineState>> {
   const language = state.copyLanguage ?? "en";
@@ -95,12 +91,10 @@ async function copyAgent(state: LandingPipelineState): Promise<Partial<LandingPi
   const productImage = state.inputImage;
   if (!productImage) throw new Error("Product image required for copy");
 
-  const output = await runWithRetry(COPY_MODEL, {
-    input: {
-      prompt,
-      images: [productImage],
-      response_mime_type: "application/json",
-    },
+  const output = await run(COPY_MODEL, {
+    prompt,
+    images: [productImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -128,7 +122,6 @@ async function copyAgent(state: LandingPipelineState): Promise<Partial<LandingPi
 }
 
 async function featuresAgent(state: LandingPipelineState): Promise<Partial<LandingPipelineState>> {
-  await sleep(RATE_LIMIT_DELAY_MS);
   const language = state.copyLanguage ?? "en";
   const dialect = state.arabicDialect;
   const userFeatures = state.features;
@@ -136,12 +129,10 @@ async function featuresAgent(state: LandingPipelineState): Promise<Partial<Landi
   const productImage = state.inputImage;
   if (!productImage) throw new Error("Product image required for features");
 
-  const output = await runWithRetry(COPY_MODEL, {
-    input: {
-      prompt,
-      images: [productImage],
-      response_mime_type: "application/json",
-    },
+  const output = await run(COPY_MODEL, {
+    prompt,
+    images: [productImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -171,12 +162,10 @@ async function creativeAgent(state: LandingPipelineState): Promise<Partial<Landi
     price: copyOutput.price,
   });
 
-  const output = await runWithRetry("google/gemini-2.5-flash", {
-    input: {
-      prompt,
-      images: [state.inputImage],
-      response_mime_type: "application/json",
-    },
+  const output = await run(COPY_MODEL, {
+    prompt,
+    images: [state.inputImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -184,6 +173,18 @@ async function creativeAgent(state: LandingPipelineState): Promise<Partial<Landi
   if (!fullCreative?.section_1?.accentColor || !fullCreative?.section_2?.accentColor || !fullCreative?.section_3?.accentColor) {
     throw new Error("Creative agent failed: all three sections required");
   }
+  
+  // Enforce correct panel sizes: Section 1 = SQR, Sections 2 & 3 = WIDE
+  if (fullCreative.section_1) {
+    fullCreative.section_1.panel_size = "SQR";
+  }
+  if (fullCreative.section_2) {
+    fullCreative.section_2.panel_size = "WIDE";
+  }
+  if (fullCreative.section_3) {
+    fullCreative.section_3.panel_size = "WIDE";
+  }
+  
   return { fullCreative };
 }
 
@@ -193,53 +194,32 @@ async function imageGeneratorForFullImage(state: LandingPipelineState): Promise<
     throw new Error("Missing input for full image: need inputImage and fullCreative");
   }
 
-  // Determine aspect ratios from panel_size in creative spec
-  // Section 1: SQR -> 1:1, Sections 2+3: WIDE -> 9:16
-  const section1PanelSize = (fullCreative.section_1 as { panel_size?: string })?.panel_size ?? "SQR";
-  const section2PanelSize = (fullCreative.section_2 as { panel_size?: string })?.panel_size ?? "WIDE";
+  // Target dimensions: width 700px, height minimum 1632px
+  const targetWidth = 700;
+  const targetHeight = 1632; // minimum height
 
-  // Map panel_size to aspect ratio
-  const getAspectRatio = (panelSize: string): string => {
-    if (panelSize === "SQR") return "1:1";
-    if (panelSize === "WIDE") return "9:16";
-    return "1:1"; // default fallback
-  };
-
-  const aspectRatio1 = getAspectRatio(section1PanelSize);
-  const aspectRatio2 = getAspectRatio(section2PanelSize); // Use section 2's ratio for combined image
-
-  // Generate Image 1: Section 1 (SQR - 1:1)
-  const prompt1 = buildImage1Prompt(fullCreative.section_1, fullCreative.background_motif);
-  const output1 = await runWithRetry("google/nano-banana-pro", {
-    input: {
-      prompt: prompt1,
-      aspect_ratio: aspectRatio1,
-      image_input: [state.inputImage],
-    },
+  // Generate single Canva image with all three sections combined
+  const prompt = buildSingleCanvaImagePrompt(
+    fullCreative.section_1,
+    fullCreative.section_2,
+    fullCreative.section_3,
+    fullCreative.background_motif,
+    targetWidth,
+    targetHeight
+  );
+  
+  const output = await run(IMAGE_MODEL, {
+    prompt,
+    images: [state.inputImage],
+    modalities: ["image", "text"],
   });
-  const raw1 = Array.isArray(output1) ? output1[0] : output1;
-  const image1Url = extractImageUrl(raw1) ?? (typeof raw1 === "string" ? raw1 : undefined);
-  if (!image1Url) throw new Error("Image generator did not return image 1 (section 1)");
 
-  await sleep(RATE_LIMIT_DELAY_MS);
+  const imageUrl = extractImageUrl(output) ?? (typeof output === "string" ? output : undefined);
+  if (!imageUrl) throw new Error("Image generator did not return the Canva image");
 
-  // Generate Image 2: Sections 2+3 combined (WIDE)
-  const prompt2 = buildImage2And3Prompt(fullCreative.section_2, fullCreative.section_3, fullCreative.background_motif);
-  const output2 = await runWithRetry("google/nano-banana-pro", {
-    input: {
-      prompt: prompt2,
-      aspect_ratio: aspectRatio2,
-      image_input: [state.inputImage],
-    },
-  });
-  const raw2 = Array.isArray(output2) ? output2[0] : output2;
-  const image2Url = extractImageUrl(raw2) ?? (typeof raw2 === "string" ? raw2 : undefined);
-  if (!image2Url) throw new Error("Image generator did not return image 2 (sections 2+3)");
-
-  // Return both image URLs - frontend can stack them vertically
+  // Return single image URL containing all three sections
   return { 
-    imageUrl: image1Url, // Section 1 (SQR)
-    image2Url: image2Url, // Sections 2+3 (WIDE)
+    imageUrl: imageUrl, // Single Canva image with all three sections
   };
 }
 
@@ -320,23 +300,21 @@ async function runPipeline(
   });
   state = { ...state, ...(await creativeAgent(state)) };
   onProgress?.("creative", { output: JSON.stringify(state.fullCreative, null, 2) });
-  await sleep(RATE_LIMIT_DELAY_MS);
 
   const fc = state.fullCreative;
   if (fc) {
     onProgress?.("image", {
-      prompt: buildImage1Prompt(fc.section_1, fc.background_motif),
-      promptLabel: "Section 1 (SQR - 1:1)",
+      prompt: buildSingleCanvaImagePrompt(fc.section_1, fc.section_2, fc.section_3, fc.background_motif, 700, 1632),
+      promptLabel: "Single Canva image (all three sections)",
     });
   }
-  await sleep(RATE_LIMIT_DELAY_MS);
   const imageResult = await imageGeneratorForFullImage(state);
   state = { ...state, ...imageResult };
-  if (fc && imageResult.image2Url) {
+  if (fc && imageResult.imageUrl) {
     onProgress?.("image", {
-      prompt: buildImage2And3Prompt(fc.section_2, fc.section_3, fc.background_motif),
-      promptLabel: "Sections 2+3 (WIDE)",
-      output: `Image 1 (SQR): ${imageResult.imageUrl}\nImage 2 (WIDE): ${imageResult.image2Url}`,
+      prompt: buildSingleCanvaImagePrompt(fc.section_1, fc.section_2, fc.section_3, fc.background_motif, 700, 1632),
+      promptLabel: "Single Canva image (all three sections)",
+      output: `Canva image (700x1632px): ${imageResult.imageUrl}`,
     });
   }
 
@@ -408,23 +386,21 @@ export async function runLandingPipelineResume(
   });
   state = { ...state, ...(await creativeAgent(state)) };
   onProgress?.("creative", { output: JSON.stringify(state.fullCreative, null, 2) });
-  await sleep(RATE_LIMIT_DELAY_MS);
 
   const fc = state.fullCreative;
   if (fc) {
     onProgress?.("image", {
-      prompt: buildImage1Prompt(fc.section_1, fc.background_motif),
-      promptLabel: "Section 1 (SQR - 1:1)",
+      prompt: buildSingleCanvaImagePrompt(fc.section_1, fc.section_2, fc.section_3, fc.background_motif, 700, 1632),
+      promptLabel: "Single Canva image (all three sections)",
     });
   }
-  await sleep(RATE_LIMIT_DELAY_MS);
   const imageResult = await imageGeneratorForFullImage(state);
   state = { ...state, ...imageResult };
-  if (fc && imageResult.image2Url) {
+  if (fc && imageResult.imageUrl) {
     onProgress?.("image", {
-      prompt: buildImage2And3Prompt(fc.section_2, fc.section_3, fc.background_motif),
-      promptLabel: "Sections 2+3 (WIDE)",
-      output: `Image 1 (SQR): ${imageResult.imageUrl}\nImage 2 (WIDE): ${imageResult.image2Url}`,
+      prompt: buildSingleCanvaImagePrompt(fc.section_1, fc.section_2, fc.section_3, fc.background_motif, 700, 1632),
+      promptLabel: "Single Canva image (all three sections)",
+      output: `Canva image (700x1632px): ${imageResult.imageUrl}`,
     });
   }
 

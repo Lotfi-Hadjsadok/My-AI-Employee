@@ -177,7 +177,6 @@ interface AdResult {
   generatedImageUrl?: string;
   refinedImageUrl?: string;
   image1Url?: string;
-  image2Url?: string;
   image3Url?: string;
   imageUrl?: string;
 }
@@ -336,103 +335,43 @@ function LandingPreviewSkeleton({ inputImage }: { inputImage?: string | null }) 
   );
 }
 
-function LandingPreview({ imageUrl, image2Url, imageUrlFn }: { imageUrl?: string; image2Url?: string; imageUrlFn: (url: string) => string }) {
-  if (!imageUrl && !image2Url) return null;
+function LandingPreview({ imageUrl, imageUrlFn }: { imageUrl?: string; imageUrlFn: (url: string) => string }) {
+  if (!imageUrl) return null;
   return (
     <div className="flex flex-col gap-4 items-center max-w-full max-h-[75vh] overflow-hidden">
       {imageUrl && (
         <img
           src={imageUrlFn(imageUrl)}
-          alt="Section 1"
-          className="max-w-full max-h-[36vh] w-auto h-auto rounded-2xl object-contain shadow-2xl shadow-black/30"
-        />
-      )}
-      {image2Url && (
-        <img
-          src={imageUrlFn(image2Url)}
-          alt="Sections 2+3"
-          className="max-w-full max-h-[36vh] w-auto h-auto rounded-2xl object-contain shadow-2xl shadow-black/30"
+          alt="Landing page"
+          className="max-w-full max-h-[75vh] w-auto h-auto rounded-2xl object-contain shadow-2xl shadow-black/30"
         />
       )}
     </div>
   );
 }
 
-function LandingMergeAndDownload({ imageUrl, image2Url, onMerged }: { imageUrl?: string; image2Url?: string; onMerged?: (mergedUrl: string) => void }) {
-  const [loading, setLoading] = useState(false);
-  const [mergedUrl, setMergedUrl] = useState<string | null>(null);
-
-  const handleMerge = async () => {
-    if (!imageUrl || !image2Url) return;
-    setLoading(true);
-    try {
-      // Use original URLs (not proxied) for merging
-      const response = await fetch("/api/landing-ad/merge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image1Url: imageUrl, image2Url }),
-      });
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: "Merge failed" }));
-        throw new Error(error.error || "Merge failed");
-      }
-      const blob = await response.blob();
-      const objUrl = URL.createObjectURL(blob);
-      setMergedUrl(objUrl);
-      onMerged?.(objUrl);
-      // Auto-download
-      const a = document.createElement("a");
-      a.href = objUrl;
-      a.download = "landing-full.png";
-      a.click();
-    } catch (e) {
-      console.error("Merge error:", e);
-      alert(e instanceof Error ? e.message : "Failed to merge images");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadMerged = () => {
-    if (!mergedUrl) return;
+function LandingDownload({ imageUrl, onDownloaded }: { imageUrl?: string; onDownloaded?: () => void }) {
+  const handleDownload = () => {
+    if (!imageUrl) return;
     const a = document.createElement("a");
-    a.href = mergedUrl;
+    a.href = imageUrl;
     a.download = "landing-full.png";
     a.click();
+    onDownloaded?.();
   };
 
-  if (!imageUrl || !image2Url) return null;
+  if (!imageUrl) return null;
 
   return (
     <div className="flex flex-wrap gap-2 justify-center">
       <button
         type="button"
-        onClick={handleMerge}
-        disabled={loading}
-        className="inline-flex items-center gap-2 rounded-xl bg-violet-500/20 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-violet-500/30 disabled:opacity-50"
+        onClick={handleDownload}
+        className="inline-flex items-center gap-2 rounded-xl bg-violet-500/20 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-violet-500/30"
       >
-        {loading ? (
-          <>
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
-            Merging...
-          </>
-        ) : (
-          <>
-            <Image className="h-4 w-4" />
-            Merge & Download
-          </>
-        )}
+        <Download className="h-4 w-4" />
+        Download
       </button>
-      {mergedUrl && (
-        <button
-          type="button"
-          onClick={handleDownloadMerged}
-          className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-3 text-sm font-medium text-white transition-all hover:bg-white/[0.1]"
-        >
-          <Download className="h-4 w-4" />
-          Download Merged
-        </button>
-      )}
     </div>
   );
 }
@@ -634,14 +573,14 @@ export default function Home() {
     }
   };
 
-  const canRetryFromImage2 =
+  const canRetry =
     aspectRatio === "landing" &&
     stage === "error" &&
     image &&
     result?.copyOutput;
 
   const handleRetry = async () => {
-    if (!canRetryFromImage2 || !image || !result?.copyOutput) return;
+    if (!canRetry || !image || !result?.copyOutput) return;
     setStage("generating");
     setError(null);
     setPromptLog([]);
@@ -1038,7 +977,7 @@ export default function Home() {
                       <span className="truncate">{error}</span>
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
-                      {canRetryFromImage2 && (
+                      {canRetry && (
                         <Button
                           type="button"
                           size="sm"
@@ -1152,9 +1091,9 @@ export default function Home() {
                   className="max-w-full max-h-[80vh] w-auto h-auto rounded-2xl object-contain shadow-2xl shadow-black/30"
                 />
               </div>
-            ) : result?.imageUrl || result?.image2Url ? (
+            ) : result?.imageUrl ? (
               <div className="animate-fade-in flex items-center justify-center max-h-full overflow-hidden p-4">
-                <LandingPreview imageUrl={result.imageUrl} image2Url={result.image2Url} imageUrlFn={imageUrl} />
+                <LandingPreview imageUrl={result.imageUrl} imageUrlFn={imageUrl} />
               </div>
                 ) : result?.refinedImageUrl ? (
                   <div className="animate-fade-in flex items-center justify-center">
@@ -1182,13 +1121,12 @@ export default function Home() {
             </div>
             </div>
             <div className="shrink-0 flex flex-wrap gap-2 justify-center">
-              {result?.imageUrl && result?.image2Url && (
+              {result?.imageUrl && (
                 <>
                   {!mergedImageUrl ? (
-                    <LandingMergeAndDownload 
+                    <LandingDownload 
                       imageUrl={result.imageUrl} 
-                      image2Url={result.image2Url} 
-                      onMerged={(url) => setMergedImageUrl(url)}
+                      onDownloaded={() => {}}
                     />
                   ) : (
                     <>

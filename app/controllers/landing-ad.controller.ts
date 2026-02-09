@@ -4,7 +4,7 @@ import {
   runLandingPipelineResume,
 } from "@/lib/landing-ad";
 import type { CopyLanguage, ArabicDialect } from "@/lib/landing-ad";
-import { replicate } from "@/lib/replicate";
+import { bufferToDataUrl } from "@/lib/openrouter";
 
 export async function createLandingAd(request: Request) {
   try {
@@ -20,8 +20,7 @@ export async function createLandingAd(request: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const uploaded = await replicate.files.create(buffer);
-    const imageUrl = uploaded.urls.get;
+    const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
     const price = (formData.get("price") as string)?.trim() || undefined;
     const copyLanguage = ((formData.get("copyLanguage") as string) || "en") as CopyLanguage;
@@ -41,8 +40,7 @@ export async function createLandingAd(request: Request) {
       success: true,
       inputImage: imageUrl,
       copyOutput: result.copyOutput,
-      imageUrl: result.imageUrl, // Section 1 (SQR - 1:1)
-      image2Url: result.image2Url, // Sections 2+3 (WIDE)
+      imageUrl: result.imageUrl, // Single Canva image with all three sections (700x1632px)
     };
   } catch (error: unknown) {
     const err = error as { message?: string };
@@ -75,8 +73,7 @@ export async function createLandingAdStream(request: Request) {
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const uploaded = await replicate.files.create(buffer);
-        const imageUrl = uploaded.urls.get;
+        const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
         const price = (formData.get("price") as string)?.trim() || undefined;
         const rawLang = (formData.get("copyLanguage") as string) || "en";
@@ -108,8 +105,7 @@ export async function createLandingAdStream(request: Request) {
             success: true,
             inputImage: imageUrl,
             copyOutput: copyWithPrice,
-            imageUrl: result.imageUrl,
-            image2Url: result.image2Url,
+            imageUrl: result.imageUrl, // Single Canva image with all three sections (700x1632px)
           },
         });
       } catch (error: unknown) {
@@ -169,8 +165,7 @@ export async function createLandingAdRetry(request: Request) {
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const uploaded = await replicate.files.create(buffer);
-        const imageUrl = uploaded.urls.get;
+        const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
         const result = await runLandingPipelineResume(
           { inputImage: imageUrl, copyOutput, price, copyLanguage, arabicDialect },
@@ -191,8 +186,7 @@ export async function createLandingAdRetry(request: Request) {
             success: true,
             inputImage: imageUrl,
             copyOutput: copyWithPrice,
-            imageUrl: result.imageUrl,
-            image2Url: result.image2Url,
+            imageUrl: result.imageUrl, // Single Canva image with all three sections (700x1632px)
           },
         });
       } catch (error: unknown) {

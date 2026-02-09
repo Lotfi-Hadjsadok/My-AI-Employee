@@ -219,7 +219,7 @@ const FEATURES_JSON_BLOCK = `{
   }
 }`;
 
-export function buildCreativeAgentPrompt(adCopy?: { headline: string; subheadline: string; cta: string; price?: string; badge_text?: string; additional_text?: Array<{ label: string; content: string }>; features?: string[] }): string {
+export function buildCreativeAgentPrompt(adCopy?: { headline: string; subheadline: string; cta: string; price?: string; badge_text?: string | null; additional_text?: Array<{ label: string; content: string }> | null; features?: string[] }): string {
   if (!adCopy?.features?.length) return CREATIVE_AGENT_PROMPT_BASE;
 
   return `${CREATIVE_AGENT_PROMPT_BASE}

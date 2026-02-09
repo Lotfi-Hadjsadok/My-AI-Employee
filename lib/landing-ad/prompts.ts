@@ -7,8 +7,8 @@ const SECTION_3_PRODUCT_TREATMENTS = "in-use, aspirational, lifestyle context, d
 
 // Format constants
 const PANEL_FORMATS = {
-  SQR: { ratio: "1:1", description: "Square format" },
-  WIDE: { ratio: "9:16", description: "Portrait format" },
+  SQR: { ratio: "1:1", description: "Hero format (1:1)" },
+  WIDE: { ratio: "4:5", description: "Portrait format" },
 } as const;
 
 const BACKGROUND_MOTIF_DESCRIPTION = "One continuous concept—section 1 establishes it, section 2 continues it, section 3 continues it";
@@ -327,7 +327,7 @@ export function buildFeaturesPrompt(
 const CREATIVE_REQUIREMENTS = {
   panelStructure: `Section 1 MUST be ${PANEL_FORMATS.SQR.description} (${PANEL_FORMATS.SQR.ratio} ratio). Sections 2 and 3 MUST be combined in ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} ratio, stacked vertically).`,
   unifiedBranding: "One accent color, one font pair across all 3 sections.",
-  continuousBackground: `${BACKGROUND_MOTIF_DESCRIPTION}. Sections 2+3 continue it—same flow, creatively evolved (e.g. gradient deepens, pattern extends).`,
+  continuousBackground: `${BACKGROUND_MOTIF_DESCRIPTION}. Sections 2+3 continue it—same flow, creatively evolved (e.g. gradient deepens, pattern extends). CRITICAL: Sections 2 and 3 must flow as ONE CONTINUOUS CANVAS with NO visible boundaries, cuts, or breaks between them. Background colors, gradients, and patterns must transition smoothly and imperceptibly from Section 2 to Section 3.`,
   productConsistency: "Same shape, colors, packaging. Vary POV/zoom per section.",
   section2Distinct: `Not a repeat of section 1. Choose one: ${SECTION_2_PRODUCT_TREATMENTS}. Surprise the viewer.`,
   useExactCopy: "Use exact ad copy below. tag.visible=false when tag is empty.",
@@ -358,7 +358,7 @@ export function buildFullCreativePrompt(copy: {
   };
 
   const prompt = {
-    role: "Creative director for a 3-section landing page. Output a visual spec. One canvas when stacked—no dividers, seamless flow.",
+    role: "Creative director for a 3-section landing page. Output a visual spec. One canvas when stacked—no dividers, seamless flow. CRITICAL: Sections 2 and 3 must be designed to flow as ONE CONTINUOUS CANVAS with NO visible boundaries or breaks between them. All sections must look connected through continuity_directives.",
     must_non_negotiable: {
       panel_structure: {
         description: CREATIVE_REQUIREMENTS.panelStructure,
@@ -370,6 +370,10 @@ export function buildFullCreativePrompt(copy: {
       },
       continuous_background: {
         description: CREATIVE_REQUIREMENTS.continuousBackground,
+        required: true
+      },
+      continuity_directives: {
+        description: "All sections must look connected and flow seamlessly. Use continuity_directives in global_directive to specify visual elements (texture_overlay, geometric_motif, or pattern) that create visual continuity across all 3 sections. These elements should evolve naturally from section 1 to section 2 to section 3, creating a unified visual narrative.",
         required: true
       },
       product: {
@@ -406,6 +410,7 @@ export function buildFullCreativePrompt(copy: {
       bold_accent_placement_pop_effects: "your choice"
     },
     output_format: {
+      description: "Output pure JSON only. No comments, no markdown, no code blocks. Start with { and end with }. Must be parseable by JSON.parse.",
       background_motif: {
         type: "string",
         description: BACKGROUND_MOTIF_DESCRIPTION,
@@ -488,7 +493,7 @@ export function buildFullCreativePrompt(copy: {
           },
           continuity_directives: {
             type: "array",
-            description: "Visual elements that create continuity across panels",
+            description: "REQUIRED: Visual elements that create continuity and connection across all 3 sections. All sections must look connected through these continuity directives. Specify texture_overlay, geometric_motif, or pattern elements that flow seamlessly from section 1 to section 2 to section 3, ensuring visual unity and connection. CRITICAL: For Sections 2 and 3, these elements must create a completely seamless transition with NO visible boundaries or breaks - they should appear as one unified canvas.",
             items: {
               type: "object",
               properties: {
@@ -767,7 +772,7 @@ export function buildFullCreativePrompt(copy: {
       },
       section_2: {
         type: "object",
-        description: "Features section - Showcase technical features and benefits",
+        description: "Features section - Showcase technical features and benefits. CRITICAL: This section must flow seamlessly into Section 3 with NO visible boundaries. Background colors, gradients, and patterns must transition smoothly into Section 3.",
         properties: {
           panel_goal: {
             type: "string",
@@ -959,7 +964,7 @@ export function buildFullCreativePrompt(copy: {
       },
       section_3: {
         type: "object",
-        description: "Conversion section - Drive purchase with price and CTA",
+        description: "Conversion section - Drive purchase with price and CTA. CRITICAL: This section must flow seamlessly from Section 2 with NO visible boundaries. Background colors, gradients, and patterns must continue smoothly from Section 2, creating one unified canvas.",
         properties: {
           panel_goal: {
             type: "string",
@@ -1220,7 +1225,7 @@ export function buildFullCreativePrompt(copy: {
 }
 
 // Image generation constants
-const IMAGE_BASE_INSTRUCTIONS = "One canvas, no dividers. Product specs unchanged. Use only text from the spec. Follow visual_prompt_english and composition_notes when provided.";
+const IMAGE_BASE_INSTRUCTIONS = "One continuous canvas, no dividers, seamless edges. Background must extend fully to all edges with no white borders or padding. For multi-section images (Sections 2+3), ensure completely seamless transitions with NO visible boundaries, cuts, or breaks between sections. Background colors, gradients, and patterns must flow continuously without interruption. Product specs unchanged. Use only text from the spec. Follow visual_prompt_english and composition_notes when provided. Apply continuity_directives from global_directive to ensure all sections look connected and flow seamlessly. Background colors and patterns must extend edge-to-edge for seamless merging.";
 
 export interface SectionCreativeSpec {
   panel_goal?: string;
@@ -1256,9 +1261,13 @@ function getAspectRatio(panelSize: string): string {
 }
 
 /** Image 1: section 1 only (hero). SQR format (1:1 ratio). */
-export function buildImage1Prompt(section1: SectionCreativeSpec, backgroundMotif?: string): string {
+export function buildImage1Prompt(section1: SectionCreativeSpec, backgroundMotif?: string, targetWidth?: number, targetHeight?: number): string {
   const panelSize = (section1 as { panel_size?: string })?.panel_size ?? "SQR";
   const aspectRatio = getAspectRatio(panelSize);
+  
+  const dimensionsNote = targetWidth && targetHeight 
+    ? ` CRITICAL: Generate image with exact dimensions ${targetWidth}x${targetHeight} pixels (width must match the other section image for seamless merging).`
+    : "";
   
   const prompt = {
     role: "Landing page image generator",
@@ -1267,68 +1276,24 @@ export function buildImage1Prompt(section1: SectionCreativeSpec, backgroundMotif
     format: {
       panel_size: panelSize,
       aspect_ratio: aspectRatio,
-      description: `${panelSize} format (${aspectRatio} aspect ratio)`
+      description: `${panelSize} format (${aspectRatio} aspect ratio)`,
+      target_dimensions: targetWidth && targetHeight ? `${targetWidth}x${targetHeight}px` : undefined
     },
     section: "Section 1 (hero) only",
     critical_requirements: [
-      `Generate this image with ${aspectRatio} aspect ratio`,
-      "One canvas, no dividers",
+      `Generate this image with ${aspectRatio} aspect ratio${dimensionsNote}`,
+      targetWidth && targetHeight ? `Image must be exactly ${targetWidth} pixels wide to match the other section image` : "",
+      "One canvas, no dividers, seamless edges",
+      "Background must extend fully to all edges - no white borders, no padding, no gaps",
+      "CRITICAL: Bottom edge background must be designed to seamlessly connect with Section 2's top edge - use colors, gradients, and patterns that can flow continuously into the next section",
       "Product specs unchanged",
       "Use only text from the spec",
-      "Follow visual_prompt_english and composition_notes when provided"
-    ],
+      "Follow visual_prompt_english and composition_notes when provided",
+      "Apply continuity_directives from global_directive to ensure visual connection with other sections",
+      "Background colors and patterns must flow edge-to-edge for seamless merging with Sections 2+3"
+    ].filter(Boolean),
     background_motif: backgroundMotif || null,
     section_1: section1
-  };
-  
-  return JSON.stringify(prompt, null, 2);
-}
-
-/** Image 2: sections 2+3 combined (WIDE format). Vertically stacked layout. */
-export function buildImage2And3Prompt(
-  section2: SectionCreativeSpec,
-  section3: SectionCreativeSpec,
-  backgroundMotif?: string
-): string {
-  const panelSize2 = (section2 as { panel_size?: string })?.panel_size ?? "WIDE";
-  const panelSize3 = (section3 as { panel_size?: string })?.panel_size ?? "WIDE";
-  const aspectRatio = getAspectRatio(panelSize2);
-  
-  const prompt = {
-    role: "Landing page image generator",
-    instructions: IMAGE_BASE_INSTRUCTIONS,
-    image_number: "2/2",
-    format: {
-      panel_size: panelSize2,
-      aspect_ratio: aspectRatio,
-      description: `${panelSize2} format (${aspectRatio} aspect ratio)`
-    },
-    layout: {
-      structure: "Sections 2 and 3 combined vertically stacked",
-      top: "Section 2 (features)",
-      bottom: "Section 3 (CTA)",
-      canvas_style: "One seamless canvas, no dividers",
-      branding: "Same branding, continuous background flow"
-    },
-    critical_requirements: [
-      `Generate this image with ${aspectRatio} aspect ratio`,
-      `Section 2 product shown in a DIFFERENT creative way—${SECTION_2_PRODUCT_TREATMENTS}. Never repeat section 1's product shot`,
-      "One canvas, no dividers",
-      "Product specs unchanged",
-      "Use only text from the spec",
-      "Follow visual_prompt_english and composition_notes when provided"
-    ],
-    background_motif: backgroundMotif || null,
-    section_2: {
-      ...section2,
-      panel_size: panelSize2,
-      note: `Top - features, ${panelSize2}`
-    },
-    section_3: {
-      ...section3,
-      panel_size: panelSize3,
-      note: `Bottom - CTA, ${panelSize3}. Product: ${SECTION_3_PRODUCT_TREATMENTS}`
-    }
   };
   
   return JSON.stringify(prompt, null, 2);
@@ -1357,12 +1322,16 @@ export function buildFullImagePrompt(
     },
     branding: "Same branding, continuous background flow",
     critical_requirements: [
-      "One canvas, no dividers",
+      "One canvas, no dividers, seamless edges",
+      "Background must extend fully to all edges - no white borders, no padding, no gaps",
+      "Section 1 bottom edge and Section 2 top edge must seamlessly connect",
       "Product specs unchanged",
       "Use only text from the spec",
       "Follow visual_prompt_english and composition_notes when provided",
       `Section 2 product shown creatively distinct: ${SECTION_2_PRODUCT_TREATMENTS}`,
-      `Section 3 product: ${SECTION_3_PRODUCT_TREATMENTS}`
+      `Section 3 product: ${SECTION_3_PRODUCT_TREATMENTS}`,
+      "Apply continuity_directives from global_directive to ensure all sections look connected and flow seamlessly",
+      "Background colors and patterns must flow edge-to-edge for seamless merging"
     ],
     background_motif: fullCreative.background_motif || null,
     section_1: {
@@ -1376,6 +1345,83 @@ export function buildFullImagePrompt(
     section_3: {
       ...fullCreative.section_3,
       note: `WIDE bottom - CTA. Product: ${SECTION_3_PRODUCT_TREATMENTS}`
+    }
+  };
+  
+  return JSON.stringify(prompt, null, 2);
+}
+
+/** Single Canva image with all three sections combined vertically. */
+export function buildSingleCanvaImagePrompt(
+  section1: SectionCreativeSpec,
+  section2: SectionCreativeSpec,
+  section3: SectionCreativeSpec,
+  backgroundMotif?: string,
+  targetWidth?: number,
+  targetHeight?: number
+): string {
+  const dimensionsNote = targetWidth && targetHeight 
+    ? ` CRITICAL: Generate image with exact dimensions ${targetWidth}x${targetHeight} pixels (width: ${targetWidth}px, height: ${targetHeight}px minimum).`
+    : "";
+  
+  const prompt = {
+    role: "Landing page image generator - Single Canva with all three sections",
+    instructions: IMAGE_BASE_INSTRUCTIONS,
+    image_number: "1/1",
+    format: {
+      canvas_type: "Single unified Canva image",
+      target_dimensions: targetWidth && targetHeight ? `${targetWidth}x${targetHeight}px (width: ${targetWidth}px, height: ${targetHeight}px minimum)` : undefined,
+      description: "One continuous canvas containing all three sections stacked vertically"
+    },
+    layout: {
+      structure: "All three sections combined vertically stacked as ONE CONTINUOUS CANVAS",
+      top: "Section 1 (hero)",
+      middle: "Section 2 (features)",
+      bottom: "Section 3 (CTA)",
+      canvas_style: "One seamless, unified canvas with NO visible boundaries, dividers, or breaks between sections. Backgrounds, colors, gradients, and patterns flow continuously from top to bottom with zero interruption. No white borders, no padding, no gaps, no cuts",
+      branding: "Same branding, continuous background flow across all sections",
+      transition_requirements: [
+        "CRITICAL: The boundaries between all sections must be completely invisible",
+        "Background colors, gradients, patterns, and visual elements must flow smoothly and naturally from Section 1 to Section 2 to Section 3",
+        "It should look like a single unified image, not three separate sections merged together",
+        "No hard edges, no color breaks, no pattern interruptions between any sections"
+      ]
+    },
+    critical_requirements: [
+      dimensionsNote,
+      targetWidth ? `Image width MUST be exactly ${targetWidth} pixels` : "",
+      targetHeight ? `Image height MUST be at least ${targetHeight} pixels` : "",
+      "ONE CONTINUOUS CANVAS: All three sections must appear as a single unified image with NO visible separation, boundaries, or cuts between them",
+      "SEAMLESS TRANSITIONS: The transitions between all sections must be completely smooth and imperceptible - background colors, gradients, and patterns must flow continuously without any breaks or interruptions",
+      "NO VISIBLE BOUNDARIES: There should be no way to tell where one section ends and another begins - they must blend seamlessly into one another",
+      "Background must extend fully to all edges - no white borders, no padding, no gaps",
+      "Top edge background must extend fully to the top edge with no cuts or breaks",
+      "Bottom edge background must extend fully to the bottom edge with no cuts or breaks",
+      `CRITICAL PANEL SIZES: Section 1 MUST be ${PANEL_FORMATS.SQR.description} (${PANEL_FORMATS.SQR.ratio} aspect ratio - square format). Sections 2 and 3 MUST both be ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} aspect ratio - portrait format). Sections 2 and 3 together must fill the remaining height after Section 1.`,
+      `Section 1: Hero section with product shown biggest. ${PANEL_FORMATS.SQR.description} (${PANEL_FORMATS.SQR.ratio} ratio) - square format at the top`,
+      `Section 2: Features section in ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} ratio). Product shown creatively distinct: ${SECTION_2_PRODUCT_TREATMENTS}. Never repeat section 1's product shot`,
+      `Section 3: Conversion section in ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} ratio). Product: ${SECTION_3_PRODUCT_TREATMENTS}—surprise the viewer`,
+      "Product specs unchanged",
+      "Use only text from the spec",
+      "Follow visual_prompt_english and composition_notes when provided",
+      "Apply continuity_directives from global_directive to ensure all sections look connected and flow seamlessly",
+      "The entire image (all three sections) should look like it was generated as one single continuous canvas, not separate sections merged together"
+    ].filter(Boolean),
+    background_motif: backgroundMotif || null,
+    section_1: {
+      ...section1,
+      panel_size: "SQR",
+      note: `Top section - Hero, ${PANEL_FORMATS.SQR.description} (${PANEL_FORMATS.SQR.ratio} ratio) - MUST be square format`
+    },
+    section_2: {
+      ...section2,
+      panel_size: "WIDE",
+      note: `Middle section - Features, ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} ratio). Product shown creatively distinct: ${SECTION_2_PRODUCT_TREATMENTS}`
+    },
+    section_3: {
+      ...section3,
+      panel_size: "WIDE",
+      note: `Bottom section - CTA, ${PANEL_FORMATS.WIDE.description} (${PANEL_FORMATS.WIDE.ratio} ratio). Product: ${SECTION_3_PRODUCT_TREATMENTS}`
     }
   };
   

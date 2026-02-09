@@ -21,7 +21,7 @@ const app = new Elysia({ prefix: "/api" })
   .post("/landing-ad", ({ request }) => createLandingAd(request))
   // POST /api/landing-ad/stream
   .post("/landing-ad/stream", ({ request }) => createLandingAdStream(request))
-  // POST /api/landing-ad/retry - resume from image2 when partial state exists
+  // POST /api/landing-ad/retry - resume from image step when partial state exists
   .post("/landing-ad/retry", ({ request }) => createLandingAdRetry(request))
   // POST /api/landing-ad/merge - merge 2 images into full landing page
   .post("/landing-ad/merge", ({ request }) => mergeLandingSections(request))

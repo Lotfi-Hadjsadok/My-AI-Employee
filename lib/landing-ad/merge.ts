@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { replicate } from "../replicate";
+import { bufferToDataUrl } from "../openrouter";
 
 const ALLOWED_ORIGINS = [
   "https://api.replicate.com/",
@@ -9,6 +9,11 @@ const ALLOWED_ORIGINS = [
 async function fetchImageBuffer(url: string): Promise<Buffer> {
   if (!url || typeof url !== "string") {
     throw new Error("Invalid url");
+  }
+  if (url.startsWith("data:")) {
+    const base64Match = url.match(/^data:image\/[^;]+;base64,(.+)$/);
+    if (!base64Match) throw new Error("Invalid data URL");
+    return Buffer.from(base64Match[1], "base64");
   }
   const allowed = ALLOWED_ORIGINS.some((o) => url.startsWith(o));
   if (!allowed) {
@@ -31,7 +36,7 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
 /**
  * Merge two images vertically (image1 on top, image2 on bottom).
  * Final image has perfect 2:5 aspect ratio.
- * Image1 (Section 1) is 4:3, Image2 (Sections 2+3) is resized to fit 2:5 final ratio.
+ * Image1 (Section 1) is 4:3, Image2 is resized to fit 2:5 final ratio.
  * Returns Replicate file URL.
  */
 export async function mergeImagesAndUpload(url1: string, url2: string): Promise<string> {
@@ -67,6 +72,5 @@ export async function mergeImagesAndUpload(url1: string, url2: string): Promise<
     .png()
     .toBuffer();
 
-  const uploaded = await replicate.files.create(merged);
-  return uploaded.urls.get;
+  return bufferToDataUrl(merged, "image/png");
 }

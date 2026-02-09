@@ -1,6 +1,6 @@
 import { runAdPipeline, runAdPipelineWithProgress } from "@/lib/static-ad";
 import type { AspectRatio, CopyLanguage, ArabicDialect } from "@/lib/static-ad";
-import { replicate } from "@/lib/replicate";
+import { bufferToDataUrl } from "@/lib/openrouter";
 
 export async function createAd(request: Request) {
   try {
@@ -16,8 +16,7 @@ export async function createAd(request: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const uploaded = await replicate.files.create(buffer);
-    const imageUrl = uploaded.urls.get;
+    const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
     const price = (formData.get("price") as string)?.trim() || undefined;
     const aspectRatio = ((formData.get("aspectRatio") as string) || "1:1") as AspectRatio;
@@ -66,8 +65,7 @@ export async function createAdStream(request: Request) {
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const uploaded = await replicate.files.create(buffer);
-        const imageUrl = uploaded.urls.get;
+        const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
         const price = (formData.get("price") as string)?.trim() || undefined;
         const rawAspect = (formData.get("aspectRatio") as string) || "1:1";

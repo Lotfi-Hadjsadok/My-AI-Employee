@@ -1,5 +1,5 @@
 import stripJsonComments from "strip-json-comments";
-import { runWithRetry, RATE_LIMIT_DELAY_MS } from "../replicate";
+import { run } from "../openrouter";
 import {
   buildCopyPrompt,
   buildFeaturesPrompt,
@@ -8,10 +8,6 @@ import {
   type ArabicDialect,
 } from "./prompts";
 import { IMAGE_GENERATOR_PROMPT_PREFIX } from "./prompts";
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /** Strip markdown code blocks (```json ... ``` or ``` ... ```) then parse JSON */
 function parseJsonResponse<T>(text: string): T {
@@ -167,6 +163,8 @@ export interface AdPipelineState {
 export type { CopyLanguage, ArabicDialect } from "./prompts";
 
 const COPY_MODEL = "google/gemini-2.5-flash" as const;
+/** Nano Banana Pro - Gemini 3 Pro Image Preview */
+const IMAGE_MODEL = "google/gemini-3-pro-image-preview" as const;
 
 async function copyAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
   const language = state.copyLanguage ?? "en";
@@ -175,12 +173,10 @@ async function copyAgent(state: AdPipelineState): Promise<Partial<AdPipelineStat
   const productImage = state.inputImage;
   if (!productImage) throw new Error("Product image is required for copy generation");
 
-  const output = await runWithRetry(COPY_MODEL, {
-    input: {
-      prompt,
-      images: [productImage],
-      response_mime_type: "application/json",
-    },
+  const output = await run(COPY_MODEL, {
+    prompt,
+    images: [productImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -192,7 +188,6 @@ async function copyAgent(state: AdPipelineState): Promise<Partial<AdPipelineStat
 }
 
 async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
-  await sleep(RATE_LIMIT_DELAY_MS);
   const language = state.copyLanguage ?? "en";
   const dialect = state.arabicDialect;
   const userFeatures = state.features;
@@ -200,12 +195,10 @@ async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipeline
   const productImage = state.inputImage;
   if (!productImage) throw new Error("Product image is required for features");
 
-  const output = await runWithRetry(COPY_MODEL, {
-    input: {
-      prompt,
-      images: [productImage],
-      response_mime_type: "application/json",
-    },
+  const output = await run(COPY_MODEL, {
+    prompt,
+    images: [productImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -216,15 +209,11 @@ async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipeline
 }
 
 async function creativeAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
-  await sleep(RATE_LIMIT_DELAY_MS);
   const creativePrompt = buildCreativeAgentPrompt(state.copyOutput);
-  const output = await runWithRetry("openai/gpt-4.1-nano", {
-    input: {
-      image_input: [state.inputImage],
-      prompt: creativePrompt,
-      // max_completion_tokens: 800,
-      response_format: { type: "json_object" },
-    },
+  const output = await run(COPY_MODEL, {
+    prompt: creativePrompt,
+    images: [state.inputImage],
+    response_mime_type: "application/json",
   });
 
   const text = Array.isArray(output) ? output.join("") : String(output);
@@ -240,7 +229,6 @@ function buildImageGeneratorPrompt(payload: AdCreativePayload, aspectRatio: Aspe
 }
 
 async function imageGeneratorAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
-  await sleep(RATE_LIMIT_DELAY_MS);
   const { copyOutput, creativeOutput, inputImage, price: userPrice, aspectRatio = "1:1" } = state;
 
   if (!inputImage || !copyOutput || !creativeOutput) {
@@ -251,8 +239,10 @@ async function imageGeneratorAgent(state: AdPipelineState): Promise<Partial<AdPi
   const payload: AdCreativePayload = { ad_copy: adCopy, ad_creative: creativeOutput };
   const fullPrompt = buildImageGeneratorPrompt(payload, aspectRatio);
 
-  const output = await runWithRetry("google/nano-banana-pro", {
-    input: { prompt: fullPrompt, aspect_ratio: aspectRatio, image_input: [inputImage] },
+  const output = await run(IMAGE_MODEL, {
+    prompt: fullPrompt,
+    images: [inputImage],
+    modalities: ["image", "text"],
   });
 
   const raw = Array.isArray(output) ? output[0] : output;
