@@ -1,0 +1,65 @@
+"use client";
+
+import {
+  Check,
+  Droplet,
+  Battery,
+  Shield,
+  Zap,
+  Wifi,
+  Star,
+  Heart,
+  Lock,
+  Flame,
+  Gift,
+  Clock,
+  Bluetooth,
+  Leaf,
+  Sun,
+  Snowflake,
+  Book,
+  Camera,
+  Truck,
+  Globe,
+  BarChart2,
+  Bell,
+  Tag,
+  Bookmark,
+  Trophy,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+
+export const FEATURE_ICONS: Record<string, LucideIcon> = {
+  droplet: Droplet,
+  battery: Battery,
+  shield: Shield,
+  zap: Zap,
+  wifi: Wifi,
+  star: Star,
+  heart: Heart,
+  lock: Lock,
+  flame: Flame,
+  gift: Gift,
+  clock: Clock,
+  sparkles: Sparkles,
+  check: Check,
+  bluetooth: Bluetooth,
+  leaf: Leaf,
+  sun: Sun,
+  snowflake: Snowflake,
+  book: Book,
+  camera: Camera,
+  truck: Truck,
+  globe: Globe,
+  chart: BarChart2,
+  bell: Bell,
+  tag: Tag,
+  bookmark: Bookmark,
+  trophy: Trophy,
+};
+
+export function FeatureIcon({ name }: { name?: string }) {
+  const Icon = name ? FEATURE_ICONS[name.toLowerCase()] : Check;
+  return Icon ? <Icon className="h-4 w-4 shrink-0 text-violet-400" /> : <Check className="h-4 w-4 shrink-0 text-violet-400" />;
+}

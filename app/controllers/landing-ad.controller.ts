@@ -2,6 +2,7 @@ import {
   runLandingPipeline,
   runLandingPipelineWithProgress,
   runLandingPipelineResume,
+  runLandingPipelineCopyOnly,
 } from "@/lib/landing-ad";
 import type { CopyLanguage, ArabicDialect } from "@/lib/landing-ad";
 import { bufferToDataUrl } from "@/lib/openrouter";
@@ -111,6 +112,157 @@ export async function createLandingAdStream(request: Request) {
       } catch (error: unknown) {
         const err = error as { message?: string };
         send({ error: err?.message || "Landing page generation failed" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+export async function createLandingAdCopy(request: Request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("image") as File;
+
+    if (!file) {
+      return new Response(
+        JSON.stringify({ error: "Image file is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
+
+    const price = (formData.get("price") as string)?.trim() || undefined;
+    const rawLang = (formData.get("copyLanguage") as string) || "en";
+    const copyLanguage = (["en", "fr", "ar"].includes(rawLang) ? rawLang : "en") as CopyLanguage;
+    const rawDialect = (formData.get("arabicDialect") as string) || undefined;
+    const arabicDialect =
+      rawDialect && ["algerian", "tunisian", "moroccan"].includes(rawDialect)
+        ? (rawDialect as ArabicDialect)
+        : undefined;
+    const productFeatures = (formData.get("productFeatures") as string)?.trim() || undefined;
+
+    const logs: { step: string; label: string; prompt: string; output?: string }[] = [];
+
+    const { copyOutput } = await runLandingPipelineCopyOnly(
+      imageUrl,
+      {
+        price,
+        copyLanguage,
+        arabicDialect,
+        productFeatures,
+      },
+      (stage, partial) => {
+        if (!partial) return;
+        const label = partial.promptLabel ?? (stage === "copy" ? "Copy agent" : "Features agent");
+        if (partial.prompt) {
+          logs.push({
+            step: stage,
+            label,
+            prompt: partial.prompt,
+            output: partial.output,
+          });
+        } else if (partial.output) {
+          const idx = logs
+            .map((e, i) => ({ e, i }))
+            .filter(({ e }) => e.step === stage && e.label === label)
+            .map(({ i }) => i)
+            .pop();
+          if (idx != null) {
+            logs[idx] = { ...logs[idx], output: partial.output };
+          }
+        }
+      }
+    );
+
+    return new Response(JSON.stringify({ copyOutput, logs }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error("Landing ad copy error:", error);
+    return new Response(
+      JSON.stringify({ error: err?.message || "Copy generation failed" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+export async function createLandingAdCopyStream(request: Request) {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: object) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      };
+
+      try {
+        const formData = await request.formData();
+        const file = formData.get("image") as File;
+
+        if (!file) {
+          send({ error: "Image file is required" });
+          controller.close();
+          return;
+        }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
+
+        const price = (formData.get("price") as string)?.trim() || undefined;
+        const rawLang = (formData.get("copyLanguage") as string) || "en";
+        const copyLanguage = (["en", "fr", "ar"].includes(rawLang) ? rawLang : "en") as CopyLanguage;
+        const rawDialect = (formData.get("arabicDialect") as string) || undefined;
+        const arabicDialect =
+          rawDialect && ["algerian", "tunisian", "moroccan"].includes(rawDialect)
+            ? (rawDialect as ArabicDialect)
+            : undefined;
+        const productFeatures = (formData.get("productFeatures") as string)?.trim() || undefined;
+
+        const { copyOutput } = await runLandingPipelineCopyOnly(
+          imageUrl,
+          {
+            price,
+            copyLanguage,
+            arabicDialect,
+            productFeatures,
+          },
+          (stage, partial) => {
+            if (!partial) return;
+            const payload = { stage, ...partial };
+            send(payload);
+          }
+        );
+
+        const copyWithPrice = copyOutput
+          ? {
+              ...copyOutput,
+              price: copyOutput.price || price || undefined,
+              features: copyOutput.features,
+            }
+          : copyOutput;
+
+        send({
+          stage: "done",
+          copyOutput: copyWithPrice,
+        });
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        send({ error: err?.message || "Copy generation failed" });
       } finally {
         controller.close();
       }
