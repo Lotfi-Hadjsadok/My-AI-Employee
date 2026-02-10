@@ -14,9 +14,6 @@ export function copyDisplayValue(value: unknown): string {
 
 export function imageUrl(url: string | undefined | null): string {
   if (url == null || typeof url !== "string") return "";
-  if (url.startsWith("data:")) return url;
-  if (url.startsWith("https://replicate.delivery") || url.startsWith("https://api.replicate.com/"))
-    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   return url;
 }
 

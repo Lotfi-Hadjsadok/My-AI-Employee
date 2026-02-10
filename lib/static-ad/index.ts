@@ -1,11 +1,5 @@
 import { run } from "../openrouter";
-import {
-  parseJsonResponse,
-  extractImageUrl,
-  parseProductFeatures,
-  COPY_MODEL,
-  IMAGE_MODEL,
-} from "../pipeline-common";
+import { COPY_MODEL, IMAGE_MODEL } from "../pipeline-common";
 import {
   buildCopyPrompt,
   buildFeaturesPrompt,
@@ -159,24 +153,13 @@ async function copyAgent(state: AdPipelineState): Promise<Partial<AdPipelineStat
       images: [productImage],
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const copyOutput = parseJsonResponse<CopyOutput>(text);
+    const copyOutput = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as CopyOutput;
     if (!copyOutput.headline || !copyOutput.cta) {
       throw new Error("Copy agent failed to produce valid output with headline and CTA");
     }
     return { copyOutput };
   };
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError =
-      err instanceof SyntaxError ||
-      (err &&
-        typeof (err as Error).message === "string" &&
-        ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
@@ -193,23 +176,12 @@ async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipeline
       images: [productImage],
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const parsed = parseJsonResponse<{ features?: string[] }>(text);
+    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { features?: string[] };
     const features = Array.isArray(parsed?.features) ? parsed.features : [];
     const copyOutput = state.copyOutput ? { ...state.copyOutput, features } : undefined;
     return copyOutput ? { copyOutput } : { features };
   };
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError =
-      err instanceof SyntaxError ||
-      (err &&
-        typeof (err as Error).message === "string" &&
-        ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 /** price_agent: takes raw price lines (user-provided or extracted) and rewrites them into persuasive, language-correct price copy. */
@@ -236,25 +208,13 @@ async function priceAgent(state: AdPipelineState): Promise<Partial<AdPipelineSta
       prompt,
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const parsed = parseJsonResponse<{ price?: string }>(text);
+    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
     const formatted = (parsed.price ?? "").trim();
     if (!formatted) return {};
     const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
     return copyOutput ? { copyOutput, price: formatted } : { price: formatted };
   };
-
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError =
-      err instanceof SyntaxError ||
-      (err &&
-        typeof (err as Error).message === "string" &&
-        ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 async function creativeAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
@@ -268,24 +228,13 @@ async function creativeAgent(state: AdPipelineState): Promise<Partial<AdPipeline
       images: [inputImage],
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const creativeOutput = parseJsonResponse<CreativeOutput>(text);
+    const creativeOutput = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as CreativeOutput;
     if (!creativeOutput.accentColor || !creativeOutput.background || !creativeOutput.effects) {
       throw new Error("Creative agent failed to produce valid output (accentColor, background, effects required)");
     }
     return { creativeOutput };
   };
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError =
-      err instanceof SyntaxError ||
-      (err &&
-        typeof (err as Error).message === "string" &&
-        ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 function buildImageGeneratorPrompt(payload: AdCreativePayload, aspectRatio: AspectRatio): string {
@@ -310,7 +259,7 @@ async function imageGeneratorAgent(state: AdPipelineState): Promise<Partial<AdPi
   });
 
   const raw = Array.isArray(output) ? output[0] : output;
-  const imageUrl = extractImageUrl(raw) ?? (typeof raw === "string" ? raw : undefined);
+  const imageUrl = typeof raw === "string" ? raw : (raw as { url?: string })?.url;
   if (!imageUrl) throw new Error("Image generator did not return an image");
   return { generatedImageUrl: imageUrl };
 }
@@ -334,7 +283,9 @@ async function runPipeline(
   },
   onProgress?: (stage: PipelineStage, detail?: PipelineProgressDetail) => void
 ): Promise<AdPipelineState> {
-  const userFeatures = parseProductFeatures(options?.productFeatures);
+  const userFeatures = options?.productFeatures?.trim()
+    ? options.productFeatures.trim().split(/\n/).map((s) => s.trim()).filter(Boolean)
+    : undefined;
 
   let state: AdPipelineState = {
     inputImage,
@@ -467,7 +418,9 @@ export async function runCopyOnly(
   },
   onProgress?: (stage: PipelineStage, detail?: PipelineProgressDetail) => void
 ): Promise<AdPipelineState> {
-  const userFeatures = parseProductFeatures(options?.productFeatures);
+  const userFeatures = options?.productFeatures?.trim()
+    ? options.productFeatures.trim().split(/\n/).map((s) => s.trim()).filter(Boolean)
+    : undefined;
   let state: AdPipelineState = {
     inputImage,
     price: options?.price,

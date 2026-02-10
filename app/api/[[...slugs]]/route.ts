@@ -7,10 +7,6 @@ import {
   createLandingAdRetry,
   createLandingAdCopyStream,
 } from "@/app/controllers/landing-ad.controller";
-import { mergeLandingSections } from "@/app/controllers/landing-merge.controller";
-import { getImageProxy } from "@/app/controllers/image-proxy.controller";
-import { createReplicate } from "@/app/controllers/replicate.controller";
-
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
@@ -34,25 +30,7 @@ const app = new Elysia({ prefix: "/api" })
   // POST /api/landing-ad/copy-stream - streaming copy + features for review/edit
   .post("/landing-ad/copy-stream", ({ request }) => createLandingAdCopyStream(request))
   // POST /api/landing-ad/retry - resume from image step when partial state exists
-  .post("/landing-ad/retry", ({ request }) => createLandingAdRetry(request))
-  // POST /api/landing-ad/merge - merge 2 images into full landing page
-  .post("/landing-ad/merge", ({ request }) => mergeLandingSections(request))
-  // GET /api/image-proxy?url=...
-  .get("/image-proxy", ({ query }) => getImageProxy(query.url), {
-    query: t.Object({ url: t.String() }),
-  })
-  // POST /api/replicate
-  .post(
-    "/replicate",
-    ({ body }) => createReplicate(body),
-    {
-      body: t.Object({
-        prompt: t.String(),
-        model: t.Optional(t.String()),
-        input: t.Optional(t.Any()),
-      }),
-    }
-  );
+  .post("/landing-ad/retry", ({ request }) => createLandingAdRetry(request));
 
 export const GET = app.fetch;
 export const POST = app.fetch;

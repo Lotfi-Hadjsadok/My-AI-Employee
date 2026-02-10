@@ -1,11 +1,5 @@
 import { run } from "../openrouter";
-import {
-  parseJsonResponse,
-  extractImageUrl,
-  parseProductFeatures,
-  COPY_MODEL,
-  IMAGE_MODEL,
-} from "../pipeline-common";
+import { COPY_MODEL, IMAGE_MODEL } from "../pipeline-common";
 import {
   buildCopyPrompt,
   buildFeaturesPrompt,
@@ -86,11 +80,10 @@ async function copyAgent(state: LandingPipelineState): Promise<Partial<LandingPi
       images: [productImage],
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const raw = parseJsonResponse<{
+    const raw = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as {
       section_1?: { headline?: string; subheadline?: string; tag?: string; badge_text?: string | null };
       section_3?: { headline?: string; subheadline?: string; cta?: string; price?: string; shop_info?: string | null };
-    }>(text);
+    };
     const s1 = raw.section_1 ?? {};
     const s3 = raw.section_3 ?? {};
     const copyOutput: LandingCopyOutput = {
@@ -109,13 +102,7 @@ async function copyAgent(state: LandingPipelineState): Promise<Partial<LandingPi
     }
     return { copyOutput };
   };
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError = err instanceof SyntaxError || (err && typeof (err as Error).message === "string" && ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 async function featuresAgent(state: LandingPipelineState): Promise<Partial<LandingPipelineState>> {
@@ -132,8 +119,7 @@ async function featuresAgent(state: LandingPipelineState): Promise<Partial<Landi
       images: [productImage],
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const parsed = parseJsonResponse<{ section_2?: { features?: FeatureItem[] } }>(text);
+    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { section_2?: { features?: FeatureItem[] } };
     const raw = parsed?.section_2?.features;
     const features: FeatureItem[] = Array.isArray(raw)
       ? raw.filter((f): f is FeatureItem => f && typeof f === "object" && typeof (f as FeatureItem).text === "string")
@@ -142,13 +128,7 @@ async function featuresAgent(state: LandingPipelineState): Promise<Partial<Landi
     if (!copyOutput) throw new Error("Copy output required for features");
     return { copyOutput };
   };
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError = err instanceof SyntaxError || (err && typeof (err as Error).message === "string" && ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 /** price_agent (landing): takes raw price lines and rewrites them into persuasive, localized price copy for section 3. */
@@ -175,25 +155,13 @@ async function priceAgent(state: LandingPipelineState, overrideRawPrice?: string
       prompt,
       response_mime_type: "application/json",
     });
-    const text = Array.isArray(output) ? output.join("") : String(output);
-    const parsed = parseJsonResponse<{ price?: string }>(text);
+    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
     const formatted = (parsed.price ?? "").trim();
     if (!formatted) return {};
     const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
     return copyOutput ? { copyOutput } : {};
   };
-
-  try {
-    return await runOnce();
-  } catch (err) {
-    const isJsonError =
-      err instanceof SyntaxError ||
-      (err &&
-        typeof (err as Error).message === "string" &&
-        ((err as Error).message.includes("JSON") || (err as Error).message.includes("position")));
-    if (isJsonError) return await runOnce();
-    throw err;
-  }
+  return runOnce();
 }
 
 async function creativeAgent(state: LandingPipelineState): Promise<Partial<LandingPipelineState>> {
@@ -218,8 +186,7 @@ async function creativeAgent(state: LandingPipelineState): Promise<Partial<Landi
     response_mime_type: "application/json",
   });
 
-  const text = Array.isArray(output) ? output.join("") : String(output);
-  const fullCreative = parseJsonResponse<FullCreativeOutput>(text);
+  const fullCreative = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as FullCreativeOutput;
   if (!fullCreative?.section_1?.accentColor || !fullCreative?.section_2?.accentColor || !fullCreative?.section_3?.accentColor) {
     throw new Error("Creative agent failed: all three sections required");
   }
@@ -265,7 +232,7 @@ async function imageGeneratorForFullImage(state: LandingPipelineState): Promise<
     modalities: ["image", "text"],
   });
 
-  const imageUrl = extractImageUrl(output) ?? (typeof output === "string" ? output : undefined);
+  const imageUrl = typeof output === "string" ? output : (output as { url?: string })?.url;
   if (!imageUrl) throw new Error("Image generator did not return the Canva image");
 
   // Return single image URL containing all three sections
@@ -296,7 +263,9 @@ async function runPipeline(
   },
   onProgress?: (stage: LandingPipelineStage, partial?: Partial<LandingPipelineState> & { prompt?: string; promptLabel?: string; output?: string }) => void
 ): Promise<LandingPipelineState> {
-  const userFeatures = parseProductFeatures(options?.productFeatures);
+  const userFeatures = options?.productFeatures?.trim()
+    ? options.productFeatures.trim().split(/\n/).map((s) => s.trim()).filter(Boolean)
+    : undefined;
 
   let state: LandingPipelineState = {
     inputImage,
@@ -405,7 +374,9 @@ export async function runLandingPipelineCopyOnly(
   },
   onProgress?: (stage: "copy" | "features", partial?: { prompt?: string; promptLabel?: string; output?: string }) => void
 ): Promise<{ copyOutput: LandingCopyOutput }> {
-  const userFeatures = parseProductFeatures(options?.productFeatures);
+  const userFeatures = options?.productFeatures?.trim()
+    ? options.productFeatures.trim().split(/\n/).map((s) => s.trim()).filter(Boolean)
+    : undefined;
   let state: LandingPipelineState = {
     inputImage,
     copyLanguage: options?.copyLanguage ?? "en",
