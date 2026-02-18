@@ -25,7 +25,7 @@ function getLanguageInstruction(lang: CopyLanguage, dialect?: ArabicDialect): st
 
 // Common instruction blocks
 const COPY_RULES = {
-  tag: 'One promotional tag if it fits (Free Shipping, 50% Off, Limited Stock, Sale, New Arrival, etc). Use "" if none fits. Used in section 1.',
+  tag: 'Default to "". Only add one promotional tag if it clearly fits (50% Off, Limited Stock, Sale, New Arrival). Do not default to Free Shipping or توصيل مجاني. Used in section 1.',
   price:
     'Extract if visible on product/packaging. Otherwise "". Used in section 3. Always write price copy in the selected language with creative, cool phrasing. STRICTLY FORBIDDEN: literal patterns like "1 for 2500" or "2 for 3900"—rewrite them into natural, persuasive lines (e.g., English "1 × 2,500" / "2 × 3,900 — best value", French "1 × 2 500" / "2 × 3 900 — meilleure offre", Arabic equivalents). One line per offer; optional "+ Free shipping" on a line. For multiple tiers, use one line each, same style, and make the best-value offer clearly stand out with wording that highlights the deal ("save more", "best value", etc.). Keep it punchy, conversion-focused, and natively phrased in the target language.',
   section3Headline: "2–5 words. Urgency, trust, or value.",
@@ -41,38 +41,47 @@ const FEATURE_RULES = {
   productOnly: 'What it does, specs, materials, benefits. NO brand claims ("Trusted brand", "Award-winning", etc).',
 } as const;
 
-/** Build a prompt for price_agent (landing), which rewrites raw user-provided price lines into persuasive, localized price copy for section 3. */
+/** Prompt for price_agent (landing): raw price lines → persuasive, localized price copy for section 3. Each price must include its currency next to it. */
 export function buildPriceCopyPrompt(
   language: CopyLanguage,
   dialect: ArabicDialect | undefined,
-  rawPrice: string
+  rawPrice: string,
+  currency?: string
 ): string {
   const langInstruction = getLanguageInstruction(language, dialect).replace("LANGUAGE: ", "");
+  const currencyLabel =
+    currency === "DZD" && language === "ar" ? "دج" : currency ?? "DZD, USD, €, etc.";
+  const currencyRule = currency
+    ? `Each price MUST be written with its currency next to it. Use: ${currency}. Arabic + DZD → "دج" after amount (e.g. 3,900 دج). Otherwise use code (e.g. 3,900 DZD, 99.99 USD). Never output only digits. Preserve exact numbers from input.`
+    : "Each price must include its currency next to it (e.g. 3,900 DZD, 99 USD, 3,900 دج). Never output only a number.";
+
+  const examplePrice =
+    currency === "DZD" && language === "ar"
+      ? "1 × 2,500 دج\\n2 × 3,900 دج — أفضل قيمة"
+      : "1 × 2,500 DZD\\n2 × 3,900 DZD — best value";
+
   const prompt = {
-    role: "You are a pricing copywriter for a landing page. You receive raw price lines and must rewrite them into persuasive, well-formatted price copy for section 3.",
+    role: "Pricing copywriter for a landing page. Rewrite raw price lines into persuasive copy for section 3.",
     language: langInstruction,
     rules: {
       price: COPY_RULES.price,
+      currency: currencyRule,
       behavior:
-        "Treat each non-empty input line as one offer. If there is only ONE offer, you may keep it simple but still follow number formatting and language conventions. If there are TWO OR MORE offers, clearly highlight the best-value offer in wording (e.g., 'best value', 'save more') while keeping the text concise and native-sounding in the target language.",
+        "One line per offer. Preserve exact numeric values (you may add thousands separators). One offer: one line with currency. Multiple offers: one line each, each with currency; highlight best-value offer in wording.",
     },
     input_price_lines: rawPrice,
     task:
-      "Rewrite the input price lines into final price copy for section 3 of a landing page. Do NOT explain anything. Do NOT add any text that is not directly related to the price/offer. Respect the target language for all words except brand or shop names.",
+      "Rewrite input into final price copy. Output language = target language. Each price must appear with its currency next to it (e.g. 3,900 DZD or 3,900 دج). No explanation, no extra text. Valid JSON only.",
     output_format: {
-      description:
-        "Output valid JSON only: no comments (no // or /* */), no trailing commas, no markdown, no code blocks. Start with { and end with }. Output must parse with JSON.parse.",
+      description: "JSON only: no comments, no trailing commas, no markdown. Starts with {, ends with }. Parses with JSON.parse.",
       schema: {
         price: {
           type: "string",
-          description:
-            "Final price copy as one string. Use line breaks (\\n) between different offers when there are multiple lines. Must already include any wording that highlights the best-value offer.",
+          description: `One string; use \\n between offers. Every line: amount + currency next to it (e.g. ${currencyLabel}). Include best-value wording where relevant.`,
           required: true,
         },
       },
-      example: {
-        price: "1 × 2,500 DZD\\n2 × 3,900 DZD — best value",
-      },
+      example: { price: examplePrice },
     },
   };
   return JSON.stringify(prompt, null, 2);
@@ -133,7 +142,7 @@ export function buildCopyPrompt(
             },
             badge_text: {
               type: "string | null",
-              description: "Same as tag but can be more creative presentation. Use null if tag is empty.",
+              description: "Use null by default—no badge. Do not use Free Shipping or توصيل مجاني as default. Only set if tag is non-empty and is a real promotional label.",
               required: false
             }
           }
@@ -183,8 +192,8 @@ export function buildCopyPrompt(
         section_1: {
           headline: "Premium Wireless Earbuds",
           subheadline: "Crystal-clear sound meets all-day comfort",
-          tag: "Free Shipping",
-          badge_text: "Free Shipping"
+          tag: "",
+          badge_text: null
         },
         section_2: {},
         section_3: {
@@ -383,6 +392,7 @@ export function buildFullCreativePrompt(copy: {
   headline: string;
   subheadline: string;
   tag: string;
+  badge_text?: string | null;
   features: FeatureItem[];
   section3Headline: string;
   section3Subheadline: string;
@@ -391,7 +401,7 @@ export function buildFullCreativePrompt(copy: {
   shopName?: string;
 }): string {
   const adCopy = {
-    section_1: { headline: copy.headline, subheadline: copy.subheadline, tag: copy.tag },
+    section_1: { headline: copy.headline, subheadline: copy.subheadline, tag: copy.tag, badge_text: copy.badge_text ?? null },
     section_2: { features: copy.features },
     section_3: { headline: copy.section3Headline, subheadline: copy.section3Subheadline, cta: copy.cta, price: copy.price ?? "", shopName: copy.shopName },
   };

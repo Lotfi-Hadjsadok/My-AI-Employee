@@ -109,6 +109,7 @@ export function useAdGeneration() {
       if (productFeatures.trim()) formData.append("productFeatures", productFeatures.trim());
       formData.append("copyLanguage", copyLanguage);
       if (copyLanguage === "ar") formData.append("arabicDialect", arabicDialect);
+      formData.append("currency", currency);
 
       const res = await fetch("/api/landing-ad/copy-stream", { method: "POST", body: formData });
       if (!res.ok || !res.body) {
@@ -408,6 +409,7 @@ export function useAdGeneration() {
         formData.append("copyOutput", JSON.stringify(landingCopy));
         formData.append("copyLanguage", copyLanguage);
         if (copyLanguage === "ar") formData.append("arabicDialect", arabicDialect);
+        formData.append("currency", currency);
         const response = await fetch("/api/landing-ad/retry", { method: "POST", body: formData });
         if (!response.ok || !response.body) throw new Error("Request failed");
         const reader = response.body.getReader();
@@ -569,6 +571,7 @@ export function useAdGeneration() {
       if (price.trim()) formData.append("price", price.trim());
       if (productFeatures.trim()) formData.append("productFeatures", productFeatures.trim());
       if (!isLandingFlow) formData.append("aspectRatio", aspectRatio);
+      formData.append("currency", currency);
       formData.append("copyLanguage", copyLanguage);
       if (copyLanguage === "ar") formData.append("arabicDialect", arabicDialect);
 
@@ -710,6 +713,7 @@ export function useAdGeneration() {
       formData.append("copyOutput", JSON.stringify(result.copyOutput));
       formData.append("copyLanguage", copyLanguage);
       if (copyLanguage === "ar") formData.append("arabicDialect", arabicDialect);
+      formData.append("currency", currency);
 
       const response = await fetch("/api/landing-ad/retry", {
         method: "POST",

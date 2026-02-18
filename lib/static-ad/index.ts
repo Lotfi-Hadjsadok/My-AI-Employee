@@ -17,6 +17,7 @@ export interface CopyOutput {
   subheadline: string;
   cta: string;
   price?: string;
+  currency?: string;
   additional_text?: Array<{ label: string; content: string }> | null;
   features?: string[];
 }
@@ -184,37 +185,41 @@ async function featuresAgent(state: AdPipelineState): Promise<Partial<AdPipeline
   return runOnce();
 }
 
-/** price_agent: takes raw price lines (user-provided or extracted) and rewrites them into persuasive, language-correct price copy. */
+/** Ensure a single price line has currency next to it (e.g. 3900 → 3900 DZD). Strips trailing currency first to avoid duplication. */
+function appendCurrencyToLine(line: string, currency: string, copyLanguage?: string): string {
+  const label = currency === "DZD" && copyLanguage === "ar" ? "دج" : currency;
+  const stripRe = new RegExp(`\\s*(?:${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}|DZD|دج|\\$|€|USD|EUR)\\s*$`, "i");
+  const cleaned = line.trim().replace(stripRe, "").trim();
+  return cleaned ? `${cleaned} ${label}` : line;
+}
+
+/** price_agent: rewrites raw price lines into persuasive ad copy. Every returned price has its currency next to it. */
 async function priceAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
   const language = state.copyLanguage ?? "en";
   const dialect = state.arabicDialect;
-
-  // Prefer explicit user price from state, otherwise fall back to copy output price.
+  const currency =
+    state.copyOutput?.currency ?? state.currency ?? (language === "ar" && dialect === "algerian" ? "DZD" : undefined);
   const raw = (state.price ?? state.copyOutput?.price ?? "").trim();
   if (!raw) return {};
 
   const lines = raw.split("\n").map((s) => s.trim()).filter(Boolean);
-  // If only a single price line, just normalize it into copyOutput and keep as-is.
   if (lines.length <= 1) {
     const single = lines[0] ?? raw;
-    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: single } : undefined;
-    return copyOutput ? { copyOutput, price: single } : { price: single };
+    const withCurrency = currency ? appendCurrencyToLine(single, currency, language) : single;
+    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: withCurrency } : undefined;
+    return copyOutput ? { copyOutput, price: withCurrency } : { price: withCurrency };
   }
 
-  const prompt = buildPriceCopyPrompt(language, dialect, raw);
-
-  const runOnce = async (): Promise<Partial<AdPipelineState>> => {
-    const output = await run(COPY_MODEL, {
-      prompt,
-      response_mime_type: "application/json",
-    });
-    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
-    const formatted = (parsed.price ?? "").trim();
-    if (!formatted) return {};
-    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
-    return copyOutput ? { copyOutput, price: formatted } : { price: formatted };
-  };
-  return runOnce();
+  const prompt = buildPriceCopyPrompt(language, dialect, raw, currency);
+  const output = await run(COPY_MODEL, { prompt, response_mime_type: "application/json" });
+  const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
+  let formatted = (parsed.price ?? "").trim();
+  if (!formatted) return {};
+  if (currency) {
+    formatted = formatted.split("\n").map((l) => appendCurrencyToLine(l, currency, language)).join("\n");
+  }
+  const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
+  return copyOutput ? { copyOutput, price: formatted } : { price: formatted };
 }
 
 async function creativeAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
@@ -238,7 +243,30 @@ async function creativeAgent(state: AdPipelineState): Promise<Partial<AdPipeline
 }
 
 function buildImageGeneratorPrompt(payload: AdCreativePayload, aspectRatio: AspectRatio): string {
-  return `${IMAGE_GENERATOR_PROMPT_PREFIX}\n\n${JSON.stringify(payload, null, 2)}`;
+  const ratioLabel =
+    aspectRatio === "1:1"
+      ? "1:1 square (feed)"
+      : aspectRatio === "4:5"
+        ? "4:5 portrait (Instagram feed)"
+        : aspectRatio === "9:16"
+          ? "9:16 vertical (stories/reels)"
+          : aspectRatio === "16:9"
+            ? "16:9 horizontal (landscape)"
+            : aspectRatio;
+
+  const ratioInstruction = `Aspect ratio: ${ratioLabel}. Fill the ENTIRE canvas with the ad design in this exact ratio. FORBIDDEN: letterboxing, padding bars, or any trick that changes the effective ratio.`;
+
+  const prefix = `${IMAGE_GENERATOR_PROMPT_PREFIX} ${ratioInstruction}`;
+
+  const payloadWithMeta = {
+    ...payload,
+    meta: {
+      ...(payload as unknown as { meta?: Record<string, unknown> }).meta,
+      aspect_ratio: aspectRatio,
+    },
+  };
+
+  return `${prefix}\n\n${JSON.stringify(payloadWithMeta, null, 2)}`;
 }
 
 async function imageGeneratorAgent(state: AdPipelineState): Promise<Partial<AdPipelineState>> {
@@ -249,7 +277,20 @@ async function imageGeneratorAgent(state: AdPipelineState): Promise<Partial<AdPi
   }
 
   const adCopy = { ...copyOutput, price: userPrice ?? copyOutput.price ?? undefined };
-  const payload: AdCreativePayload = { ad_copy: adCopy, ad_creative: creativeOutput };
+  const priceText = adCopy.price?.trim();
+  // Ensure the image generator always receives the exact price so the static ad shows the pricing model
+  const adCreativeWithPrice: CreativeOutput =
+    priceText
+      ? {
+          ...creativeOutput,
+          text_content: {
+            ...creativeOutput.text_content,
+            price_text: priceText,
+          },
+        }
+      : creativeOutput;
+
+  const payload: AdCreativePayload = { ad_copy: adCopy, ad_creative: adCreativeWithPrice };
   const fullPrompt = buildImageGeneratorPrompt(payload, aspectRatio);
 
   const output = await run(IMAGE_MODEL, {
@@ -331,9 +372,10 @@ async function runPipeline(
   // price_agent: format user-provided price (or extracted price) into final price copy before creative.
   if ((state.price ?? state.copyOutput?.price)?.trim()) {
     const rawPrice = (state.price ?? state.copyOutput?.price ?? "").trim();
+    const priceCurrency = state.copyOutput?.currency ?? state.currency;
     emit("copy", {
       promptLabel: "Price agent",
-      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice),
+      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice, priceCurrency),
     });
     state = { ...state, ...(await priceAgent(state)) };
     emit("copy", {
@@ -457,9 +499,10 @@ export async function runCopyOnly(
   });
   if ((state.price ?? state.copyOutput?.price)?.trim()) {
     const rawPrice = (state.price ?? state.copyOutput?.price ?? "").trim();
+    const priceCurrency = state.copyOutput?.currency ?? state.currency;
     emit("copy", {
       promptLabel: "Price agent",
-      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice),
+      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice, priceCurrency),
     });
     state = { ...state, ...(await priceAgent(state)) };
     emit("copy", {

@@ -75,7 +75,11 @@ export function FormStepEditCopyBadges({ draft, setDraft }: FormStepEditCopyProp
     });
   };
   const addBadge = () => {
-    setDraft((prev) => ({ ...prev, badges: [...ensureBadges(prev), ""] }));
+    setDraft((prev) => {
+      const next = [...ensureBadges(prev), ""];
+      const firstNonEmpty = next.filter(Boolean)[0] ?? null;
+      return { ...prev, badges: next, badge_text: firstNonEmpty };
+    });
   };
   const removeBadge = (index: number) => {
     setDraft((prev) => {

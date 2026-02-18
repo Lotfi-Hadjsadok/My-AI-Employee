@@ -1,6 +1,6 @@
 "use client";
 
-import { ASPECT_RATIOS, LANGUAGES } from "./types";
+import { ASPECT_RATIOS, LANGUAGES, CURRENCIES } from "./types";
 import { PriceDisplay } from "./price-display";
 
 interface FormStepReviewProps {
@@ -8,9 +8,11 @@ interface FormStepReviewProps {
   aspectRatio: string;
   copyLanguage: string;
   price: string;
+  currency?: string;
 }
 
-export function FormStepReview({ image, aspectRatio, copyLanguage, price }: FormStepReviewProps) {
+export function FormStepReview({ image, aspectRatio, copyLanguage, price, currency }: FormStepReviewProps) {
+  const currencyLabel = currency ? CURRENCIES.find((c) => c.value === currency)?.label ?? currency : null;
   return (
     <div className="animate-step-in p-6 sm:p-8">
       <div className="mb-6">
@@ -33,9 +35,11 @@ export function FormStepReview({ image, aspectRatio, copyLanguage, price }: Form
             <span className="text-white">{LANGUAGES.find((l) => l.value === copyLanguage)?.label}</span>
           </p>
           {price && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-              <span className="text-white/50">Price:</span>
-              <PriceDisplay value={price} className="mt-1.5 sm:mt-0" />
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              <p className="text-white/50">
+                Price{currencyLabel ? ` (${currencyLabel})` : ""}:
+              </p>
+              <PriceDisplay value={price} currency={currency} className="mt-0" />
             </div>
           )}
         </div>

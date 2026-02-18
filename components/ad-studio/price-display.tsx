@@ -22,15 +22,36 @@ function numericFromPrice(s: string): number | null {
   return parseFloat(match[1].replace(",", "."));
 }
 
+/** True if the line already ends with or contains a known currency (code or symbol). */
+function lineHasCurrency(line: string): boolean {
+  const t = line.trim();
+  return (
+    /\b(USD|EUR|DZD)\s*$/i.test(t) ||
+    /(€|\$)\s*$/.test(t) ||
+    /\s*دج\s*$/.test(t) ||
+    /[\d,.\s]+(USD|EUR|DZD|€|\$|دج)(\s|$)/i.test(t)
+  );
+}
+
+/** Ensure the display line shows price + currency. If currency prop is set and line has none, append it. */
+function formatLineWithCurrency(line: string, currency?: string): string {
+  if (!currency?.trim()) return line;
+  if (lineHasCurrency(line)) return line;
+  const trimmed = line.trim();
+  return trimmed ? `${trimmed} ${currency.trim()}` : line;
+}
+
 export interface PriceDisplayProps {
   /** Raw price string (multi-line allowed). */
   value: string;
   /** Optional display transform (e.g. for RTL / "(empty)"). */
   displayValue?: (raw: string) => string;
+  /** When set, each line is shown with this currency if it doesn't already include one. */
+  currency?: string;
   className?: string;
 }
 
-export function PriceDisplay({ value, displayValue = (s) => s, className = "" }: PriceDisplayProps) {
+export function PriceDisplay({ value, displayValue = (s) => s, currency, className = "" }: PriceDisplayProps) {
   const raw = typeof value === "string" ? value : "";
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -39,10 +60,11 @@ export function PriceDisplay({ value, displayValue = (s) => s, className = "" }:
   if (lines.length === 0) return null;
 
   const parsed = lines.map((line) => {
-    const { qty, pricePart, freeShipping } = parseDisplayLine(line);
+    const displayLine = formatLineWithCurrency(line, currency);
+    const { qty, pricePart, freeShipping } = parseDisplayLine(displayLine);
     const num = numericFromPrice(pricePart);
     const unitPrice = qty > 0 && num != null ? num / qty : null;
-    return { line, qty, pricePart, freeShipping, unitPrice };
+    return { line: displayLine, qty, pricePart, freeShipping, unitPrice };
   });
 
   let bestIndex = -1;

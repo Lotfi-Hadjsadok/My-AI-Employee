@@ -27,6 +27,7 @@ export async function createLandingAd(request: Request) {
     const copyLanguage = ((formData.get("copyLanguage") as string) || "en") as CopyLanguage;
     const arabicDialect = (formData.get("arabicDialect") as string) || undefined;
     const productFeatures = (formData.get("productFeatures") as string)?.trim() || undefined;
+    const currency = (formData.get("currency") as string)?.trim() || undefined;
 
     const result = await runLandingPipeline(imageUrl, {
       price,
@@ -34,6 +35,7 @@ export async function createLandingAd(request: Request) {
       arabicDialect: arabicDialect && ["algerian", "tunisian", "moroccan"].includes(arabicDialect)
         ? (arabicDialect as ArabicDialect)
         : undefined,
+      currency,
       productFeatures,
     });
 
@@ -85,11 +87,12 @@ export async function createLandingAdStream(request: Request) {
             ? (rawDialect as ArabicDialect)
             : undefined;
         const productFeatures = (formData.get("productFeatures") as string)?.trim() || undefined;
+        const currency = (formData.get("currency") as string)?.trim() || undefined;
 
         const result = await runLandingPipelineWithProgress(
           imageUrl,
           (stage, partial) => send({ stage, ...partial }),
-          { price, copyLanguage, arabicDialect, productFeatures }
+          { price, copyLanguage, arabicDialect, currency, productFeatures }
         );
 
         const copyWithPrice = result.copyOutput
@@ -232,6 +235,7 @@ export async function createLandingAdCopyStream(request: Request) {
             ? (rawDialect as ArabicDialect)
             : undefined;
         const productFeatures = (formData.get("productFeatures") as string)?.trim() || undefined;
+        const currency = (formData.get("currency") as string)?.trim() || undefined;
 
         const { copyOutput } = await runLandingPipelineCopyOnly(
           imageUrl,
@@ -239,6 +243,7 @@ export async function createLandingAdCopyStream(request: Request) {
             price,
             copyLanguage,
             arabicDialect,
+            currency,
             productFeatures,
           },
           (stage, partial) => {
@@ -299,6 +304,7 @@ export async function createLandingAdRetry(request: Request) {
           rawDialect && ["algerian", "tunisian", "moroccan"].includes(rawDialect)
             ? (rawDialect as ArabicDialect)
             : undefined;
+        const currency = (formData.get("currency") as string)?.trim() || undefined;
 
         if (!file || !copyOutputRaw) {
           send({ error: "Retry requires image and copyOutput" });
@@ -320,7 +326,7 @@ export async function createLandingAdRetry(request: Request) {
         const imageUrl = bufferToDataUrl(buffer, file.type.startsWith("image/") ? file.type : "image/jpeg");
 
         const result = await runLandingPipelineResume(
-          { inputImage: imageUrl, copyOutput, price, copyLanguage, arabicDialect },
+          { inputImage: imageUrl, copyOutput, price, copyLanguage, arabicDialect, currency },
           (stage, partial) => send({ stage, ...partial })
         );
 

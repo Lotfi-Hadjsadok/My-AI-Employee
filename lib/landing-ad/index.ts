@@ -60,6 +60,7 @@ export interface LandingPipelineState {
   imageUrl?: string;
   copyLanguage?: CopyLanguage;
   arabicDialect?: ArabicDialect;
+  currency?: string;
   /** Raw user-provided feature strings (before features agent) */
   features?: string[];
   error?: string;
@@ -131,37 +132,40 @@ async function featuresAgent(state: LandingPipelineState): Promise<Partial<Landi
   return runOnce();
 }
 
-/** price_agent (landing): takes raw price lines and rewrites them into persuasive, localized price copy for section 3. */
+/** Ensure a single price line has currency next to it (e.g. 3900 → 3900 DZD). Strips trailing currency first to avoid duplication. */
+function appendCurrencyToLine(line: string, currency: string, copyLanguage?: string): string {
+  const label = currency === "DZD" && copyLanguage === "ar" ? "دج" : currency;
+  const stripRe = new RegExp(`\\s*(?:${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}|DZD|دج|\\$|€|USD|EUR)\\s*$`, "i");
+  const cleaned = line.trim().replace(stripRe, "").trim();
+  return cleaned ? `${cleaned} ${label}` : line;
+}
+
+/** price_agent (landing): rewrites raw price lines into persuasive section-3 copy. Every returned price has its currency next to it. */
 async function priceAgent(state: LandingPipelineState, overrideRawPrice?: string): Promise<Partial<LandingPipelineState>> {
   const language = state.copyLanguage ?? "en";
   const dialect = state.arabicDialect;
-
-  const base = overrideRawPrice ?? state.copyOutput?.price ?? "";
-  const raw = (base ?? "").trim();
+  const currency = state.currency ?? (language === "ar" && dialect === "algerian" ? "DZD" : undefined);
+  const raw = (overrideRawPrice ?? state.copyOutput?.price ?? "").trim();
   if (!raw) return {};
 
   const lines = raw.split("\n").map((s) => s.trim()).filter(Boolean);
-  // If only a single price line, just normalize it into copyOutput and keep as-is.
   if (lines.length <= 1) {
     const single = lines[0] ?? raw;
-    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: single } : undefined;
+    const withCurrency = currency ? appendCurrencyToLine(single, currency, language) : single;
+    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: withCurrency } : undefined;
     return copyOutput ? { copyOutput } : {};
   }
 
-  const prompt = buildPriceCopyPrompt(language, dialect, raw);
-
-  const runOnce = async (): Promise<Partial<LandingPipelineState>> => {
-    const output = await run(COPY_MODEL, {
-      prompt,
-      response_mime_type: "application/json",
-    });
-    const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
-    const formatted = (parsed.price ?? "").trim();
-    if (!formatted) return {};
-    const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
-    return copyOutput ? { copyOutput } : {};
-  };
-  return runOnce();
+  const prompt = buildPriceCopyPrompt(language, dialect, raw, currency);
+  const output = await run(COPY_MODEL, { prompt, response_mime_type: "application/json" });
+  const parsed = JSON.parse((Array.isArray(output) ? output.join("") : String(output ?? "")).trim()) as { price?: string };
+  let formatted = (parsed.price ?? "").trim();
+  if (!formatted) return {};
+  if (currency) {
+    formatted = formatted.split("\n").map((l) => appendCurrencyToLine(l, currency, language)).join("\n");
+  }
+  const copyOutput = state.copyOutput ? { ...state.copyOutput, price: formatted } : undefined;
+  return copyOutput ? { copyOutput } : {};
 }
 
 async function creativeAgent(state: LandingPipelineState): Promise<Partial<LandingPipelineState>> {
@@ -173,6 +177,7 @@ async function creativeAgent(state: LandingPipelineState): Promise<Partial<Landi
     headline: copyOutput.headline ?? "",
     subheadline: copyOutput.subheadline ?? "",
     tag: copyOutput.tag ?? "",
+    badge_text: copyOutput.badge_text ?? null,
     features: copyOutput.features ?? [],
     section3Headline: copyOutput.section3Headline ?? "",
     section3Subheadline: copyOutput.section3Subheadline ?? "",
@@ -190,11 +195,16 @@ async function creativeAgent(state: LandingPipelineState): Promise<Partial<Landi
   if (!fullCreative?.section_1?.accentColor || !fullCreative?.section_2?.accentColor || !fullCreative?.section_3?.accentColor) {
     throw new Error("Creative agent failed: all three sections required");
   }
-  
-  // Enforce correct panel sizes: Section 1 = SQR, Sections 2 & 3 = WIDE
+
+  // Use user-edited badge from copyOutput so image generation shows the edited badge, not the AI-generated one
+  const userBadge = copyOutput.badge_text ?? null;
   if (fullCreative.section_1) {
+    if (!fullCreative.section_1.text_content) fullCreative.section_1.text_content = {};
+    fullCreative.section_1.text_content.badge_text = userBadge;
     fullCreative.section_1.panel_size = "SQR";
   }
+  
+  // Enforce correct panel sizes: Section 1 = SQR, Sections 2 & 3 = WIDE
   if (fullCreative.section_2) {
     fullCreative.section_2.panel_size = "WIDE";
   }
@@ -259,6 +269,7 @@ async function runPipeline(
     price?: string;
     copyLanguage?: CopyLanguage;
     arabicDialect?: ArabicDialect;
+    currency?: string;
     productFeatures?: string;
   },
   onProgress?: (stage: LandingPipelineStage, partial?: Partial<LandingPipelineState> & { prompt?: string; promptLabel?: string; output?: string }) => void
@@ -271,6 +282,7 @@ async function runPipeline(
     inputImage,
     copyLanguage: options?.copyLanguage ?? "en",
     arabicDialect: options?.arabicDialect,
+    currency: options?.currency,
     features: userFeatures,
   };
 
@@ -293,8 +305,9 @@ async function runPipeline(
 
   // price_agent: format user-provided price (or extracted price) into final price copy before creative.
   if ((options?.price ?? state.copyOutput?.price)?.trim()) {
+    const rawPrice = (options?.price ?? state.copyOutput?.price ?? "").trim();
     onProgress?.("copy", {
-      prompt: buildPriceCopyPrompt(lang, dialect, (options?.price ?? state.copyOutput?.price ?? "").trim()),
+      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice, options?.currency),
       promptLabel: "Price copy",
     });
     state = { ...state, ...(await priceAgent(state, options?.price)) };
@@ -307,6 +320,7 @@ async function runPipeline(
       headline: copy?.headline ?? "",
       subheadline: copy?.subheadline ?? "",
       tag: copy?.tag ?? "",
+      badge_text: copy?.badge_text ?? null,
       features: copy?.features ?? [],
       section3Headline: copy?.section3Headline ?? "",
       section3Subheadline: copy?.section3Subheadline ?? "",
@@ -344,6 +358,7 @@ export async function runLandingPipeline(
     price?: string;
     copyLanguage?: CopyLanguage;
     arabicDialect?: ArabicDialect;
+    currency?: string;
     productFeatures?: string;
   }
 ) {
@@ -357,6 +372,7 @@ export async function runLandingPipelineWithProgress(
     price?: string;
     copyLanguage?: CopyLanguage;
     arabicDialect?: ArabicDialect;
+    currency?: string;
     productFeatures?: string;
   }
 ) {
@@ -370,6 +386,7 @@ export async function runLandingPipelineCopyOnly(
     price?: string;
     copyLanguage?: CopyLanguage;
     arabicDialect?: ArabicDialect;
+    currency?: string;
     productFeatures?: string;
   },
   onProgress?: (stage: "copy" | "features", partial?: { prompt?: string; promptLabel?: string; output?: string }) => void
@@ -381,6 +398,7 @@ export async function runLandingPipelineCopyOnly(
     inputImage,
     copyLanguage: options?.copyLanguage ?? "en",
     arabicDialect: options?.arabicDialect,
+    currency: options?.currency,
     features: userFeatures,
   };
   const lang = state.copyLanguage ?? "en";
@@ -401,8 +419,9 @@ export async function runLandingPipelineCopyOnly(
   onProgress?.("features", { output: JSON.stringify(state.copyOutput?.features ?? [], null, 2) });
 
   if ((options?.price ?? state.copyOutput?.price)?.trim()) {
+    const rawPrice = (options?.price ?? state.copyOutput?.price ?? "").trim();
     onProgress?.("copy", {
-      prompt: buildPriceCopyPrompt(lang, dialect, (options?.price ?? state.copyOutput?.price ?? "").trim()),
+      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice, state.currency),
       promptLabel: "Price copy",
     });
     state = { ...state, ...(await priceAgent(state, options?.price)) };
@@ -418,6 +437,7 @@ export async function runLandingPipelineResume(
     price?: string;
     copyLanguage?: CopyLanguage;
     arabicDialect?: ArabicDialect;
+    currency?: string;
   },
   onProgress?: (stage: LandingPipelineStage, partial?: Partial<LandingPipelineState> & { prompt?: string; promptLabel?: string; output?: string }) => void
 ): Promise<LandingPipelineState> {
@@ -429,12 +449,14 @@ export async function runLandingPipelineResume(
     copyOutput,
     copyLanguage: partialState.copyLanguage ?? "en",
     arabicDialect: partialState.arabicDialect,
+    currency: partialState.currency,
   };
   if ((partialState.price ?? state.copyOutput?.price)?.trim()) {
     const lang = state.copyLanguage ?? "en";
     const dialect = state.arabicDialect;
+    const rawPrice = (partialState.price ?? state.copyOutput?.price ?? "").trim();
     onProgress?.("copy", {
-      prompt: buildPriceCopyPrompt(lang, dialect, (partialState.price ?? state.copyOutput?.price ?? "").trim()),
+      prompt: buildPriceCopyPrompt(lang, dialect, rawPrice, state.currency),
       promptLabel: "Price copy",
     });
     state = { ...state, ...(await priceAgent(state, partialState.price)) };
@@ -448,6 +470,7 @@ export async function runLandingPipelineResume(
           headline: copy.headline ?? "",
           subheadline: copy.subheadline ?? "",
           tag: copy.tag ?? "",
+          badge_text: copy.badge_text ?? null,
           features: copy.features ?? [],
           section3Headline: copy.section3Headline ?? "",
           section3Subheadline: copy.section3Subheadline ?? "",

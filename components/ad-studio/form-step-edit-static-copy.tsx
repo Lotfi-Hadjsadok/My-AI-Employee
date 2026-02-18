@@ -50,7 +50,13 @@ export function FormStepEditStaticBadges({ draft, setDraft }: FormStepEditStatic
       return { ...prev, badges: next, badge_text: next[0] ?? null };
     });
   };
-  const addBadge = () => setDraft((prev) => ({ ...prev, badges: [...ensureBadges(prev), ""] }));
+  const addBadge = () => {
+    setDraft((prev) => {
+      const next = [...ensureBadges(prev), ""];
+      const firstNonEmpty = next.filter(Boolean)[0] ?? null;
+      return { ...prev, badges: next, badge_text: firstNonEmpty };
+    });
+  };
   const removeBadge = (index: number) => {
     setDraft((prev) => {
       const next = ensureBadges(prev).filter((_, i) => i !== index);

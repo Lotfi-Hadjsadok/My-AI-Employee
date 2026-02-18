@@ -16,6 +16,7 @@ interface FormStepUploadProps {
   onClearImage: () => void;
   price: string;
   setPrice: (v: string) => void;
+  currency?: string;
 }
 
 export function FormStepUpload({
@@ -29,12 +30,15 @@ export function FormStepUpload({
   onClearImage,
   price,
   setPrice,
+  currency,
 }: FormStepUploadProps) {
   return (
     <div className="animate-step-in p-6 sm:p-8 space-y-6">
       <div className="mb-4">
         <h2 className="text-xl font-semibold text-white">Product & price</h2>
-        <p className="mt-1 text-sm text-white/50">Upload product image and add price lines</p>
+        <p className="mt-1 text-sm text-white/50">
+          Upload product image and add price lines{currency ? ` (currency: ${currency})` : ""}
+        </p>
       </div>
       <div
         role="button"
@@ -111,7 +115,7 @@ export function FormStepUpload({
         id="static-price"
         value={price}
         onChange={setPrice}
-        label="Price (optional)"
+        label={currency ? `Price (optional) — ${currency}` : "Price (optional)"}
       />
     </div>
   );

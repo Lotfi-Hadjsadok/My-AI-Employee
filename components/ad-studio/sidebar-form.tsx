@@ -252,6 +252,7 @@ export function SidebarForm({
                 onClearImage={onClearImage}
                 price={price}
                 setPrice={setPrice}
+                currency={currency}
               />
             )}
             {!isLanding && adType === "static" && formStep === 9 && (
@@ -260,6 +261,7 @@ export function SidebarForm({
                 aspectRatio={aspectRatio}
                 copyLanguage={copyLanguage}
                 price={price}
+                currency={currency}
               />
             )}
 
